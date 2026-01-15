@@ -2,7 +2,14 @@
 
 A modern, elegant, and lightweight desktop music player built for Windows. **Crescendo** combines a premium visual aesthetic with powerful library management, delivering a seamless listening experience.
 
-![Crescendo Preview](https://via.placeholder.com/800x450.png?text=Preview+Coming+Soon)
+![Crescendo Dark Mode](Assets/Screenshot%202026-01-15%20221726.png)
+
+## 📸 Gallery
+
+<p float="left">
+  <img src="Assets/Screenshot%202026-01-15%20221814.png" width="45%" />
+  <img src="Assets/Screenshot%202026-01-15%20221909.png" width="45%" /> 
+</p>
 
 ## ✨ Features
 
