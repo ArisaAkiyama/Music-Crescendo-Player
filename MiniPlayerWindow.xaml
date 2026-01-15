@@ -1,0 +1,247 @@
+<Window x:Class="DesktopMusicPlayer.MiniPlayerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DesktopMusicPlayer"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        Title="Mini Player" 
+        MinWidth="380" MaxWidth="700"
+        SizeToContent="WidthAndHeight"
+        WindowStyle="None"
+        Opacity="0"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="False"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <!-- Theme-aware Border -->
+    <Border x:Name="MainBorder" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" 
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+            MouseLeftButtonDown="Window_MouseLeftButtonDown">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Main Info -->
+            </Grid.RowDefinitions>
+
+                <!-- Standard View (Cover + Text) -->
+                <!-- Visible by Default, Fades Out on Hover -->
+                <Grid x:Name="StandardView" Grid.Column="0" Grid.ColumnSpan="2" Margin="12,12,12,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Cover Art -->
+                    <Grid Grid.Column="0" Width="48" Height="48">
+                        <!-- Fallback Background -->
+                        <Border Background="{DynamicResource ControlHoverBrush}" CornerRadius="6">
+                            <TextBlock Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" 
+                                       FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}" 
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <!-- Cover Image -->
+                        <Rectangle RadiusX="6" RadiusY="6">
+                            <Rectangle.Fill>
+                                <ImageBrush ImageSource="{Binding CurrentSong.CoverArt}" Stretch="UniformToFill"/>
+                            </Rectangle.Fill>
+                        </Rectangle>
+                    </Grid>
+
+                    <!-- Text Info -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,24,0">
+                        <TextBlock Text="{Binding CurrentSong.Title, FallbackValue='No Song Playing'}" 
+                                   Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="Bold" FontSize="13" 
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding CurrentSong.Artist, FallbackValue='Select a song'}" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" 
+                                   TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Controls View (Slider + Centered Buttons) -->
+                <!-- Hidden by Default, Fades In on Hover -->
+                <Grid x:Name="ControlsView" Grid.Column="0" Grid.ColumnSpan="2" 
+                      Opacity="0" IsHitTestVisible="False" VerticalAlignment="Center" Margin="12,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Buttons Row (Centered) -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                        
+                        <!-- Shuffle Button -->
+                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding ShuffleCommand}" Margin="0,0,16,0"
+                                ToolTip="Shuffle">
+                            <TextBlock x:Name="ShuffleIcon" Text="&#xE8B1;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                            <Button.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/> <!-- Default Color -->
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsShuffleEnabled}" Value="True">
+                                            <Setter Property="Foreground" Value="#87CEEB"/> <!-- Sky Blue -->
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsShuffleEnabled}" Value="False">
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <!-- Previous -->
+                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding PreviousCommand}" Margin="8,0"
+                                ToolTip="Previous">
+                            <TextBlock Text="&#xE892;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        </Button>
+
+                        <!-- Play/Pause -->
+                        <Button Width="36" Height="36" Command="{Binding PlayPauseCommand}" Margin="12,0"
+                                ToolTip="Play/Pause">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="bdr" Background="#87CEEB" CornerRadius="18">
+                                        <Grid>
+                                            <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IsPlaying, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                            <TextBlock Text="&#xE769;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="bdr" Property="Background" Value="#9FD9F6"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <!-- Next -->
+                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding NextCommand}" Margin="8,0"
+                                ToolTip="Next">
+                            <TextBlock Text="&#xE893;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        </Button>
+                        
+                        <!-- Repeat Button -->
+                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding RepeatCommand}" Margin="16,0,0,0"
+                                ToolTip="Repeat">
+                            <Button.Resources>
+                                <Style TargetType="TextBlock" x:Key="RepeatIconStyle">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RepeatMode}" Value="Off">
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                            <Setter Property="Text" Value="&#xE8EE;"/> <!-- Repeat All Icon (Off) -->
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RepeatMode}" Value="RepeatAll">
+                                            <Setter Property="Foreground" Value="#87CEEB"/> <!-- Sky Blue -->
+                                            <Setter Property="Text" Value="&#xE8EE;"/> <!-- Repeat All Icon -->
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RepeatMode}" Value="RepeatOne">
+                                            <Setter Property="Foreground" Value="#87CEEB"/> <!-- Sky Blue -->
+                                            <Setter Property="Text" Value="&#xE8ED;"/> <!-- Repeat One Icon -->
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Resources>
+                            <TextBlock Style="{StaticResource RepeatIconStyle}" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Progress Row: Time - Slider - Time -->
+                    <Grid Grid.Row="1" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="{Binding CurrentTimeFormatted}" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+                        <Slider Grid.Column="1" Value="{Binding CurrentProgress}" Maximum="{Binding TotalDuration}" 
+                                IsMoveToPointEnabled="True" Cursor="Hand"
+                                VerticalAlignment="Center"
+                                Thumb.DragStarted="Slider_DragStarted" Thumb.DragCompleted="Slider_DragCompleted"
+                                PreviewMouseLeftButtonDown="Slider_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="Slider_PreviewMouseLeftButtonUp">
+                            <Slider.Style>
+                                <Style TargetType="Slider" BasedOn="{StaticResource ProgressSliderStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentSong}" Value="{x:Null}">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Slider.Style>
+                        </Slider>
+
+                        <TextBlock Grid.Column="2" Text="{Binding TotalTimeFormatted}" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </Grid>
+                </Grid>
+
+
+            <!-- Expand Button (Always Top Right) -->
+            <Button Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Style="{StaticResource IconButtonStyle}"
+                    Click="ExpandButton_Click"
+                    ToolTip="Expand to Main Player"
+                    Margin="0,8,8,0">
+                <TextBlock Text="&#xE740;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
+            </Button>
+        </Grid>
+
+        <!-- Animation Triggers -->
+        <Border.Triggers>
+            <EventTrigger RoutedEvent="MouseEnter">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <!-- Fade Out Standard View -->
+                        <DoubleAnimation Storyboard.TargetName="StandardView" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                        
+                        <!-- Fade In Controls View -->
+                        <DoubleAnimation Storyboard.TargetName="ControlsView" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ControlsView" Storyboard.TargetProperty="IsHitTestVisible">
+                            <DiscreteObjectKeyFrame KeyTime="0:0:0">
+                                <DiscreteObjectKeyFrame.Value>
+                                    <sys:Boolean>True</sys:Boolean>
+                                </DiscreteObjectKeyFrame.Value>
+                            </DiscreteObjectKeyFrame>
+                        </ObjectAnimationUsingKeyFrames>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="MouseLeave">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <!-- Fade In Standard View -->
+                        <DoubleAnimation Storyboard.TargetName="StandardView" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                        
+                        <!-- Fade Out Controls View -->
+                        <DoubleAnimation Storyboard.TargetName="ControlsView" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ControlsView" Storyboard.TargetProperty="IsHitTestVisible">
+                            <DiscreteObjectKeyFrame KeyTime="0:0:0.2">
+                                <DiscreteObjectKeyFrame.Value>
+                                    <sys:Boolean>False</sys:Boolean>
+                                </DiscreteObjectKeyFrame.Value>
+                            </DiscreteObjectKeyFrame>
+                        </ObjectAnimationUsingKeyFrames>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Border.Triggers>
+    </Border>
+</Window>

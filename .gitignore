@@ -1,0 +1,41 @@
+# Build Results
+[Bb]in/
+[Oo]bj/
+dist/
+InnoOutput/
+CustomInstallerOutput/
+UninstallerOutput/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Executables & Archives
+*.exe
+*.dll
+*.pdb
+*.zip
+*.7z
+*.rar
+
+# NuGet
+packages/
+
+# Temporary files
+*.log
+*.tmp
+*.bak
+*.cache
+
+# OS generated
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Exceptions (if you have assets that are meant to be tracked)
+!Assets/*.png
+!Assets/*.ico
+!Resources/*.xaml

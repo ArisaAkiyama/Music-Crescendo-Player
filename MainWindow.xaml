@@ -1,0 +1,1511 @@
+﻿<Window x:Class="DesktopMusicPlayer.MainWindow"
+xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+xmlns:local="clr-namespace:DesktopMusicPlayer"
+xmlns:vm="clr-namespace:DesktopMusicPlayer.ViewModels"
+xmlns:components="clr-namespace:DesktopMusicPlayer.Components"
+mc:Ignorable="d"
+Title="Crescendo"
+Height="700" Width="1200"
+MinHeight="600" MinWidth="900"
+WindowStartupLocation="CenterScreen"
+WindowStyle="None"
+ResizeMode="CanResize"
+    Icon="Assets/ocean-wave-blue.ico"
+Background="{DynamicResource AppBackgroundBrush}">
+<WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="48"
+        ResizeBorderThickness="5"
+        GlassFrameThickness="0"
+        CornerRadius="0"/>
+</WindowChrome.WindowChrome>
+<!-- DataContext Binding -->
+<Window.DataContext>
+    <vm:MainViewModel/>
+</Window.DataContext>
+<!-- Main Container Wrapped in Border to handle Maximize Offsets -->
+<Border x:Name="MainBorder">
+    <Border.Style>
+      <Style TargetType="Border">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WindowState}" Value="Maximized">
+                    <Setter Property="Margin" Value="8"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Border.Style>
+    <Grid>
+        <!-- Row Definitions - 3 Rows -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48"/>     <!-- Row 0: Top Navigation Bar -->
+            <RowDefinition Height="*"/>      <!-- Row 1: Main Content -->
+            <RowDefinition Height="90"/>     <!-- Row 2: Player Bar -->
+        </Grid.RowDefinitions>
+        <!-- ============================================ -->
+        <!-- ROW 0: TOP NAVIGATION BAR (Spotify Style)    -->
+        <!-- ============================================ -->
+        <Grid Grid.Row="0" Background="{DynamicResource AppBackgroundBrush}">
+            <!-- No Columns - Use Overlay Layout for Perfect Centering -->
+            <!-- LAYER 1: Center Search Box (Z-Index Bottom) -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,6,0,0" WindowChrome.IsHitTestVisibleInChrome="True">
+                <!-- Home Button (Resized to 40) -->
+                <Button Command="{Binding HomeCommand}"
+                    Width="40" Height="40"
+                    Margin="0,0,12,0"
+                    ToolTip="Home"
+                    Background="#1F1F1F"
+                    BorderThickness="0"
+                    Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                                Background="#87CEEB"
+                                CornerRadius="20">
+                                <Grid>
+                                    <TextBlock Text="&#xE80F;"
+                                        FontFamily="Segoe MDL2 Assets"
+                                        FontSize="20"
+                                        Foreground="White"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"/>
+                                </Grid>
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="5" Color="#87CEEB" Opacity="0.4" ShadowDepth="0"/>
+                                </Border.Effect>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#9FD9F6"/> <!-- Lighter Sky Blue -->
+                                    <Setter TargetName="border" Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect BlurRadius="10" Color="#87CEEB" Opacity="0.6" ShadowDepth="0"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#76B5D1"/> <!-- Darker Sky Blue -->
+                                    <Setter TargetName="border" Property="Opacity" Value="1.0"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <!-- Search Box (Resized to Height 36) -->
+                <Border Width="400" Height="36"
+                    CornerRadius="18"
+                    Background="{DynamicResource ControlHoverBrush}">
+                    <Grid Margin="12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Search Icon -->
+                        <TextBlock Grid.Column="0"
+                            Text="&#xE721;"
+                            FontFamily="Segoe MDL2 Assets"
+                            FontSize="16"
+                            Foreground="{DynamicResource SecondaryTextBrush}"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0"/>
+                        <!-- Search Input -->
+                        <TextBox Grid.Column="1"
+                            Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="White"
+                            FontSize="13"
+                            VerticalAlignment="Center"
+                            Padding="0"
+                            CaretBrush="White"/>
+                        <!-- Placeholder -->
+                        <TextBlock Grid.Column="1"
+                            Text="What do you want to play?"
+                            FontStyle="Italic"
+                            Foreground="{DynamicResource SecondaryTextBrush}"
+                            FontSize="13"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False"
+                            Visibility="{Binding SearchText, Converter={StaticResource StringToVisibilityConverter}}"/>
+                        <!-- Right Side Icons -->
+                        <!-- Right Side Icons Removed -->
+                    </Grid>
+                </Border>
+                <!-- Spacer for Symmetry (Balances the Home Button width + margin) -->
+                <!-- Home Button (40) + Margin Right (12) = 52px Total on Left -->
+                <!-- We add 52px spacer on Right to make the Search Box perfectly centered -->
+                <Grid Width="52" Visibility="Hidden"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="24,0,0,0" WindowChrome.IsHitTestVisibleInChrome="True">
+                <!-- Ocean Wave Logo -->
+                <Rectangle Width="32" Height="32" Fill="#87CEEB" RenderOptions.BitmapScalingMode="HighQuality">
+                    <Rectangle.OpacityMask>
+                        <ImageBrush ImageSource="pack://application:,,,/Assets/ocean-wave.png" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Rectangle.OpacityMask>
+                </Rectangle>
+            </StackPanel>
+            <!-- LAYER 3: Right Window Controls (Overlay Right) -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
+                <!-- Mini Player IButton -->
+                <Button Style="{StaticResource IconButtonStyle}"
+                    Click="SwitchToMiniPlayer_Click"
+                    Margin="0,0,8,0"
+                    ToolTip="Switch to Mini Player"
+                    Height="48"
+                    VerticalAlignment="Top">
+                    <TextBlock Text="&#xE740;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                </Button>
+                <!-- Theme Toggle Button -->
+                <Button Style="{StaticResource IconButtonStyle}"
+                    Command="{Binding ToggleThemeCommand}"
+                    Margin="0,0,8,0"
+                    ToolTip="Toggle Theme"
+                    Height="48"
+                    VerticalAlignment="Top">
+                    <Grid>
+                        <!-- Sun Icon (for switching to Light) - Visible when Dark -->
+                        <TextBlock Text="&#xE706;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"
+                            Visibility="{Binding IsDarkTheme, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <!-- Moon Icon (for switching to Dark) - Visible when Light -->
+                        <TextBlock Text="&#xE708;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"
+                            Visibility="{Binding IsDarkTheme, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    </Grid>
+                </Button>
+                <!-- Moved Menu Button -->
+                <Button Style="{StaticResource IconButtonStyle}"
+                    Margin="0,0,8,0"
+                    ToolTip="Menu"
+                    Height="48"
+                    VerticalAlignment="Top"
+                    Click="MenuButton_Click">
+                    <Button.ContextMenu>
+                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <ContextMenu.Template>
+                                <ControlTemplate TargetType="ContextMenu">
+                                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="4">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.4" Direction="270"/>
+                                        </Border.Effect>
+                                        <ScrollViewer Style="{DynamicResource {ComponentResourceKey ResourceId=MenuScrollViewer, TypeInTargetAssembly={x:Type FrameworkElement}}}">
+                                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" Grid.IsSharedSizeScope="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </ControlTemplate>
+                            </ContextMenu.Template>
+                            <ContextMenu.Resources>
+                                <Style TargetType="MenuItem">
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Padding" Value="12,8"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Margin" Value="0,2"/> <!-- Spacing between items -->
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="MenuItem">
+                                                <Border x:Name="templateRoot"
+                                                    Background="{TemplateBinding Background}"
+                                                    SnapsToDevicePixels="True"
+                                                    BorderThickness="0"
+                                                    CornerRadius="4"> <!-- Rounded Hover -->
+                                                    <Grid Margin="{TemplateBinding Padding}">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Icon"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut"/>
+                                                            <ColumnDefinition Width="14"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <!-- Icon (Optional) -->
+                                                        <ContentPresenter x:Name="Icon" Content="{TemplateBinding Icon}" ContentSource="Icon" HorizontalAlignment="Center" Height="16" Margin="0,0,12,0" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center" Width="16"/>
+                                                        <!-- Header -->
+                                                        <ContentPresenter x:Name="HeaderHost" Grid.Column="1" Content="{TemplateBinding Header}" ContentSource="Header" HorizontalAlignment="Left" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center"/>
+                                                        <!-- Arrow for Submenu -->
+                                                        <Path x:Name="RightArrow" Grid.Column="3" Data="M0,0 L4,3.5 L0,7 Z" Fill="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                        <!-- Submenu Popup -->
+                                                        <Popup x:Name="Popup" AllowsTransparency="True" Focusable="False" HorizontalOffset="4" IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" Placement="Right" PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}" VerticalOffset="-4">
+                                                            <Border x:Name="SubmenuBorder"
+                                                                Background="{DynamicResource CardBackgroundBrush}"
+                                                                BorderBrush="{DynamicResource BorderBrush}"
+                                                                BorderThickness="1"
+                                                                SnapsToDevicePixels="True"
+                                                                CornerRadius="8"
+                                                                Padding="4">
+                                                                <Border.Effect>
+                                                                    <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.4" Direction="270"/>
+                                                                </Border.Effect>
+                                                                <ScrollViewer x:Name="SubmenuScrollViewer" CanContentScroll="True" Style="{DynamicResource {ComponentResourceKey ResourceId=MenuScrollViewer, TypeInTargetAssembly={x:Type FrameworkElement}}}">
+                                                                    <Grid RenderOptions.ClearTypeHint="Enabled">
+                                                                        <!-- Background for submenu items -->
+                                                                        <Rectangle Fill="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Cycle" Grid.IsSharedSizeScope="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                                                    </Grid>
+                                                                </ScrollViewer>
+                                                            </Border>
+                                                        </Popup>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="HasItems" Value="True">
+                                                        <Setter TargetName="RightArrow" Property="Visibility" Value="Visible"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsHighlighted" Value="True">
+                                                        <Setter TargetName="templateRoot" Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.5"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                                <!-- Separator Style -->
+                                <Style TargetType="Separator">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Separator">
+                                                <Border Background="{DynamicResource SeparatorBrush}" Height="1" Margin="4,4"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ContextMenu.Resources>
+                            <!-- File -->
+                            <MenuItem Header="File">
+                                <MenuItem Header="Add Music Folder..." Command="{Binding AddFolderCommand}"/>
+                                <MenuItem Header="Add Music Files..." Command="{Binding AddFilesCommand}"/>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="Exit" Command="{Binding ExitApplicationCommand}"/>
+                            </MenuItem>
+                            <!-- Edit -->
+                            <MenuItem Header="Edit">
+                                <MenuItem Header="Select All" Command="{Binding SelectAllCommand}" InputGestureText="Ctrl+A"/>
+                                <MenuItem Header="Deselect All" Command="{Binding DeselectAllCommand}"/>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="Find" Command="{Binding FocusSearchCommand}" InputGestureText="Ctrl+F"/>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="Preferences" Command="{Binding SettingsCommand}"/>
+                            </MenuItem>
+                            <!-- View -->
+                            <MenuItem Header="View">
+                                <MenuItem Header="Toggle Sidebar" Command="{Binding ToggleSidebarCommand}"/>
+                                <MenuItem Header="Toggle Queue Panel" Command="{Binding ToggleQueueCommand}"/>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="Go to Current Song" Command="{Binding ScrollToCurrentCommand}"/>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="Mini Player Mode" Command="{Binding ToggleMiniPlayerCommand}"/>
+                                <MenuItem Header="Full Screen" Command="{Binding ToggleFullScreenCommand}" InputGestureText="F11"/>
+                            </MenuItem>
+                            <!-- Playback -->
+                            <MenuItem Header="Playback">
+                                <MenuItem Header="Play/Pause" Command="{Binding PlayPauseCommand}" InputGestureText="Space"/>
+                                <MenuItem Header="Stop" Command="{Binding StopCommand}"/>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="Next Track" Command="{Binding NextCommand}" InputGestureText="Ctrl+?"/>
+                                <MenuItem Header="Previous Track" Command="{Binding PreviousCommand}" InputGestureText="Ctrl+?"/>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="Shuffle" Command="{Binding ShuffleCommand}" IsCheckable="True" IsChecked="{Binding IsShuffleEnabled}"/>
+                                <MenuItem Header="Repeat">
+                                    <MenuItem Header="Off" Command="{Binding SetRepeatOffCommand}"/>
+                                    <MenuItem Header="Repeat All" Command="{Binding SetRepeatAllCommand}"/>
+                                    <MenuItem Header="Repeat One" Command="{Binding SetRepeatOneCommand}"/>
+                                </MenuItem>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="Volume Up" Command="{Binding VolumeUpCommand}" InputGestureText="?"/>
+                                <MenuItem Header="Volume Down" Command="{Binding VolumeDownCommand}" InputGestureText="?"/>
+                                <MenuItem Header="Mute" Command="{Binding ToggleMuteCommand}" IsCheckable="True" IsChecked="{Binding IsMuted}"/>
+                            </MenuItem>
+                            <!-- Help -->
+                            <MenuItem Header="Help">
+                                <MenuItem Header="Keyboard Shortcuts" Command="{Binding KeyboardShortcutsCommand}"/>
+                                <Separator Background="#3E3E3E"/>
+                                <MenuItem Header="About Crescendo" Command="{Binding AboutCommand}"/>
+                            </MenuItem>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                    <TextBlock Text="&#xE712;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#B3B3B3"/>
+                </Button>
+                <!-- Custom Window Controls (Height 48) -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="48">
+                    <!-- Minimize -->
+                    <Button Style="{StaticResource WindowControlButtonStyle}"
+                        Click="MinimizeButton_Click"
+                        Content="&#xE921;"
+                        Height="48"/>
+                    <!-- Maximize -->
+                    <Button Style="{StaticResource WindowControlButtonStyle}"
+                        Click="MaximizeButton_Click"
+                        Content="&#xE922;"
+                        Height="48"/>
+                    <!-- Close -->
+                    <Button Style="{StaticResource CloseButtonStyle}"
+                        Click="CloseButton_Click"
+                        Content="&#xE8BB;"
+                        Width="56"
+                        Height="48"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <!-- ============================================ -->
+        <!-- ROW 1: MAIN CONTENT AREA (Sidebar + Content) -->
+        <!-- ============================================ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="280"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
+            <!-- COLUMN 0: LEFT PANEL (Library) -->
+            <Border Grid.Column="0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Margin="6"
+                Visibility="{Binding IsSidebarVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Header -->
+                        <RowDefinition Height="Auto"/> <!-- Search Bar -->
+                        <RowDefinition Height="*"/>    <!-- List -->
+                    </Grid.RowDefinitions>
+                    <!-- Library Header -->
+                    <Grid Grid.Row="0" Margin="16,20,16,16">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets" FontSize="24" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="Your Library" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <!-- Add Folder Button -->
+                            <Button Style="{StaticResource IconButtonStyle}" ToolTip="Add Music Folder" Command="{Binding AddFolderCommand}" Margin="0,0,4,0">
+                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </Button>
+                            <!-- Add MP3 File(s) Button -->
+                            <Button Style="{StaticResource IconButtonStyle}" ToolTip="Add MP3 File(s)" Command="{Binding AddFilesCommand}">
+                                <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                    <!-- Search & Filter Bar -->
+                    <Grid Grid.Row="1" Margin="16,0,16,8">
+                        <!-- Search Box (Always Visible) -->
+                        <Border Background="{DynamicResource ControlHoverBrush}" CornerRadius="4" Height="32">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Search Icon -->
+                                <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="8,0"/>
+                                <!-- Input -->
+                                <TextBox x:Name="LibrarySearchBox"
+                                    Grid.Column="1"
+                                    Text="{Binding LibrarySearchText, UpdateSourceTrigger=PropertyChanged}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Foreground="{DynamicResource PrimaryTextBrush}"
+                                    CaretBrush="{DynamicResource PrimaryTextBrush}"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"/>
+                                <!-- Placeholder -->
+                                <TextBlock Grid.Column="1"
+                                    Text="Searching for something lib?"
+                                    FontStyle="Italic"
+                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                    FontSize="14"
+                                    VerticalAlignment="Center"
+                                    IsHitTestVisible="False"
+                                    Visibility="{Binding LibrarySearchText, Converter={StaticResource StringToVisibilityConverter}}"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                    <!-- List (Liked Songs + Playlists) -->
+                    <ScrollViewer Grid.Row="2" Margin="8,0" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- Pinned 'Liked Songs' Item -->
+                            <!-- Playlists -->
+                            <!-- Playlists -->
+                            <ListBox ItemsSource="{Binding PlaylistsView}"
+                                SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}"
+                                Background="Transparent" BorderThickness="0"
+                                Style="{StaticResource PlaylistListBoxStyle}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4" Background="Transparent"
+                                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                                            <Grid.Style>
+                                                <Style TargetType="Grid">
+                                                    <Setter Property="ContextMenu">
+                                                        <Setter.Value>
+                                                            <ContextMenu Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                                                <MenuItem Header="Rename"
+                                                                    Command="{Binding PlacementTarget.Tag.RenamePlaylistCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                    CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                    Foreground="White">
+                                                                    <MenuItem.Icon>
+                                                                        <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#B3B3B3"/>
+                                                                    </MenuItem.Icon>
+                                                                </MenuItem>
+                                                                <Separator Background="#3E3E3E"/>
+                                                                <MenuItem Header="Delete"
+                                                                    Command="{Binding PlacementTarget.Tag.DeletePlaylistCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                    CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                    Foreground="#E91E63">
+                                                                    <MenuItem.Icon>
+                                                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#E91E63"/>
+                                                                    </MenuItem.Icon>
+                                                                </MenuItem>
+                                                            </ContextMenu>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsLikedSongs}" Value="True">
+                                                            <Setter Property="ContextMenu" Value="{x:Null}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Grid.Style>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="48"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Width="48" Height="48" Background="#282828" CornerRadius="4">
+                                                <Image Source="{Binding CoverImage}" Stretch="UniformToFill"/> <!-- Assuming prop exists, else fallback -->
+                                            </Border>
+                                            <!-- Fallback Icon if no image -->
+                                            <Border Grid.Column="0" Width="48" Height="48" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="4" Visibility="{Binding HasCoverImage, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                                <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="&#xE8B7;"/> <!-- Default: Folder -->
+                                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsLikedSongs}" Value="True">
+                                                                    <Setter Property="Text" Value="&#xE00B;"/> <!-- Heart Icon -->
+                                                                    <Setter Property="Foreground" Value="#87CEEB"/> <!-- Spotify Green or Custom Accent -->
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontSize="15" Foreground="{DynamicResource PrimaryTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Songs.Count, StringFormat='{}Playlist • {0} Songs'}" FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+            <!-- COLUMN 1: CENTER PANEL (Content) -->
+            <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Margin="6">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <!-- Playlist Header Removed -->
+                    <!-- List Content -->
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <!-- Action Bar Removed -->
+                        <!-- The List -->
+                        <DataGrid x:Name="SongsDataGrid"
+                            Grid.Row="1"
+                            ItemsSource="{Binding SongsView}"
+                            SelectedItem="{Binding SelectedSong}"
+                            Style="{StaticResource SpotifyDataGridStyle}"
+                            Margin="24,0"
+                            MouseDoubleClick="SongsDataGrid_MouseDoubleClick"
+                            Sorting="SongsDataGrid_Sorting"
+                            CanUserSortColumns="True"
+                            VirtualizingPanel.ScrollUnit="Pixel"
+                            VirtualizingPanel.CacheLength="5,5"
+                            VirtualizingPanel.CacheLengthUnit="Item"
+                            VirtualizingPanel.VirtualizationMode="Recycling"
+                            AlternationCount="9999">
+                            <DataGrid.Columns>
+                                <!-- # Column -->
+                                <DataGridTemplateColumn Header="#" Width="50" IsReadOnly="True" SortMemberPath="Id">
+                                    <DataGridTemplateColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SpotifyDataGridColumnHeaderStyle}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTemplateColumn.HeaderStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <!-- Normal Number -->
+                                                <TextBlock x:Name="NumberText"
+                                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                                    HorizontalAlignment="Center">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding Converter="{StaticResource RowNumberConverter}">
+                                                            <Binding/>
+                                                            <Binding Path="DataContext.SongsView" RelativeSource="{RelativeSource AncestorType=DataGrid}"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                                <!-- Play Icon Button (Hidden by default, shown on hover) -->
+                                                <Button x:Name="PlayIcon"
+                                                    Command="{Binding DataContext.PlaySongCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    Cursor="Hand"
+                                                    Visibility="Collapsed"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Grid Background="Transparent">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Grid>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                    <TextBlock Text="&#xE768;"
+                                                        FontFamily="Segoe MDL2 Assets"
+                                                        FontSize="12"
+                                                        Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                                </Button>
+                                                <!-- Equalizer Animation -->
+                                                <components:EqualizerIcon x:Name="EqualizerIcon"
+                                                    Visibility="Collapsed"
+                                                    HorizontalAlignment="Center"/>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <!-- Trigger 0: Hover over row -> Show Play Icon, Hide Number -->
+                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                    <Setter TargetName="NumberText" Property="Visibility" Value="Collapsed"/>
+                                                    <Setter TargetName="PlayIcon" Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <!-- Trigger 1: If it IS the current song -> Make text Green -->
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource IsSameSongConverter}">
+                                                            <Binding Path="FilePath"/>
+                                                            <Binding Path="DataContext.CurrentSong.FilePath" RelativeSource="{RelativeSource AncestorType=DataGrid}"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter TargetName="NumberText" Property="Foreground" Value="#87CEEB"/>
+                                                </DataTrigger>
+                                                <!-- Trigger 2: If Current AND Playing -> Hide Number, Hide PlayIcon, Show Equalizer -->
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource IsCurrentAndPlayingConverter}">
+                                                            <Binding Path="FilePath"/>
+                                                            <Binding Path="DataContext.CurrentSong.FilePath" RelativeSource="{RelativeSource AncestorType=DataGrid}"/>
+                                                            <Binding Path="DataContext.IsPlaying" RelativeSource="{RelativeSource AncestorType=DataGrid}"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter TargetName="NumberText" Property="Visibility" Value="Collapsed"/>
+                                                    <Setter TargetName="PlayIcon" Property="Visibility" Value="Collapsed"/>
+                                                    <Setter TargetName="EqualizerIcon" Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <!-- Title Column (Cover + Title + Artist) -->
+                                <DataGridTemplateColumn Header="Title" Width="4*" IsReadOnly="True" SortMemberPath="Title">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,4" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                <!-- Cover Art Removed -->
+                                                <!-- Title & Artist -->
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Value="True">
+                                                                        <DataTrigger.Binding>
+                                                                            <MultiBinding Converter="{StaticResource IsSameSongConverter}">
+                                                                                <Binding Path="FilePath"/>
+                                                                                <Binding Path="Tag.CurrentSong.FilePath" RelativeSource="{RelativeSource AncestorType=Grid}"/>
+                                                                            </MultiBinding>
+                                                                        </DataTrigger.Binding>
+                                                                        <Setter Property="Foreground" Value="#87CEEB"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding Artist}" FontSize="13" TextTrimming="CharacterEllipsis">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Value="True">
+                                                                        <DataTrigger.Binding>
+                                                                            <MultiBinding Converter="{StaticResource IsSameSongConverter}">
+                                                                                <Binding/>
+                                                                                <Binding Path="Tag.CurrentSong" RelativeSource="{RelativeSource AncestorType=Grid}"/>
+                                                                            </MultiBinding>
+                                                                        </DataTrigger.Binding>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <!-- Album Column -->
+                                <DataGridTextColumn Header="Album"
+                                    Binding="{Binding Album}"
+                                    Width="2*"
+                                    SortMemberPath="Album"
+                                    IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                            <Setter Property="FontSize" Value="13"/>
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <!-- Like Column -->
+                                <DataGridTemplateColumn Width="40" IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.ToggleLikeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid>
+                                                            <TextBlock x:Name="HeartIcon"
+                                                                Text="&#xE006;"
+                                                                FontFamily="Segoe MDL2 Assets"
+                                                                FontSize="14"
+                                                                Foreground="#B3B3B3"
+                                                                Visibility="Hidden"/> <!-- Hidden by default, shown on Hover/Liked -->
+                                                            </Grid>
+                                                            <ControlTemplate.Triggers>
+                                                                <!-- Show on Hover Row -->
+                                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                                    <Setter TargetName="HeartIcon" Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                                <!-- Liked State (Update Appearance Only, Visibility controlled by Hover) -->
+                                                                <DataTrigger Binding="{Binding IsLiked}" Value="True">
+                                                                    <!-- Removed Visibility=Visible to keep it hidden when not hovering -->
+                                                                    <Setter TargetName="HeartIcon" Property="Foreground" Value="#87CEEB"/>
+                                                                    <Setter TargetName="HeartIcon" Property="Text" Value="&#xEB52;"/> <!-- Filled Heart -->
+                                                                </DataTrigger>
+                                                                <!-- Hover on Button itself -->
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="HeartIcon" Property="Foreground" Value="White"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <!-- Duration Column (Clock Icon Header) -->
+                                    <DataGridTemplateColumn Width="80" IsReadOnly="True" SortMemberPath="Duration">
+                                        <DataGridTemplateColumn.HeaderStyle>
+                                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SpotifyDataGridColumnHeaderStyle}">
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            </Style>
+                                        </DataGridTemplateColumn.HeaderStyle>
+                                        <DataGridTemplateColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <Grid ToolTip="Duration (Click to sort)" Background="Transparent">
+                                                    <Path x:Name="ClockIcon"
+                                                        Data="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"
+                                                        Fill="#B3B3B3"
+                                                        Width="16"
+                                                        Height="16"
+                                                        Stretch="Uniform"
+                                                        VerticalAlignment="Center"
+                                                        HorizontalAlignment="Right"
+                                                        Margin="0,0,16,0"
+                                                        IsHitTestVisible="False"/>
+                                                </Grid>
+                                                <DataTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ClockIcon" Property="Fill" Value="{DynamicResource PrimaryTextBrush}"/>
+                                                    </Trigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.HeaderTemplate>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding DurationFormatted}"
+                                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Right"
+                                                    FontSize="13"
+                                                    Margin="0,0,16,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                                <!-- Row Context Menu -->
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow" BasedOn="{StaticResource SpotifyDataGridRowStyle}">
+                                        <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        <Setter Property="ContextMenu">
+                                            <Setter.Value>
+                                                <ContextMenu Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                                    <!-- Like -->
+                                                    <MenuItem Header="Like"
+                                                        Command="{Binding PlacementTarget.Tag.ToggleLikeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                        CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                        <MenuItem.Icon>
+                                                            <TextBlock Text="&#xEB51;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#87CEEB"/>
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                    <!-- Add to Queue -->
+                                                    <MenuItem Header="Add to Queue"
+                                                        Command="{Binding PlacementTarget.Tag.AddToQueueCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                        CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                        <MenuItem.Icon>
+                                                            <TextBlock Text="&#xE8EE;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#B3B3B3"/>
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                    <!-- Remove from Queue -->
+                                                    <MenuItem Header="Remove from Queue"
+                                                        Command="{Binding PlacementTarget.Tag.RemoveFromQueueCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                        CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                        Foreground="#FFCC00">
+                                                        <MenuItem.Icon>
+                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#FFCC00"/>
+                                                        </MenuItem.Icon>
+                                                        <MenuItem.Style>
+                                                            <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Value="Visible">
+                                                                        <DataTrigger.Binding>
+                                                                            <MultiBinding Converter="{StaticResource IsItemInCollectionConverter}">
+                                                                                <Binding Path="PlacementTarget.DataContext" RelativeSource="{RelativeSource AncestorType=ContextMenu}"/>
+                                                                                <Binding Path="PlacementTarget.Tag.PlayQueue" RelativeSource="{RelativeSource AncestorType=ContextMenu}"/>
+                                                                            </MultiBinding>
+                                                                        </DataTrigger.Binding>
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </MenuItem.Style>
+                                                    </MenuItem>
+                                                    <Separator Background="#3E3E3E"/>
+                                                    <!-- Remove from Library -->
+                                                    <MenuItem Header="Remove from Library"
+                                                        Command="{Binding PlacementTarget.Tag.RemoveFromLibraryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                        CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                        Foreground="#E91E63">
+                                                        <MenuItem.Icon>
+                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#E91E63"/>
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                </ContextMenu>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                            </DataGrid>
+                        </Grid>
+                    </Grid>
+                </Border>
+                <!-- COLUMN 2: RIGHT PANEL (Now Playing + Credits) -->
+                <Border Grid.Column="2" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Margin="6">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+                        <StackPanel Margin="16">
+                            <!-- Header -->
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="{Binding ContentTitle}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="Bold" FontSize="16"/>
+
+                            </Grid>
+                            <!-- Cover Art -->
+                            <Border CornerRadius="8" Margin="0,0,0,16" HorizontalAlignment="Center">
+                                <Grid>
+                                    <Image Source="{Binding CurrentSong.CoverArt}" Width="200" Height="200" Stretch="UniformToFill"/>
+                                    <!-- Fallback -->
+                                    <Grid Visibility="{Binding CurrentSong.HasCoverArt, Converter={StaticResource InverseBoolToVisibilityConverter}, FallbackValue=Visible}">
+                                        <Border Background="#282828" CornerRadius="8" Height="200" Width="200">
+                                            <TextBlock Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" FontSize="60" Foreground="#535353" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                            <!-- Title & Artist -->
+                            <Grid VerticalAlignment="Top" Margin="0,0,0,24">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding CurrentSong.Title}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" TextTrimming="CharacterEllipsis" Margin="0,0,24,0"/>
+                                    <TextBlock Text="{Binding CurrentSong.Artist}" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,0,0"/>
+                                    <TextBlock Text="{Binding CurrentSong.TechnicalDetails}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,0,0" Opacity="0.7"/>
+                                </StackPanel>
+                                <!-- Green Check -->
+                                <!-- Like Button -->
+                                <Button Command="{Binding ToggleLikeCommand}"
+                                    CommandParameter="{Binding CurrentSong}"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding CurrentSong, Converter={StaticResource NullToVisibilityConverter}}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Grid Background="Transparent">
+                                                <TextBlock x:Name="HeartIcon"
+                                                    Text="&#xE006;"
+                                                    FontFamily="Segoe MDL2 Assets"
+                                                    FontSize="18"
+                                                    Foreground="#B3B3B3"/>
+                                            </Grid>
+                                            <ControlTemplate.Triggers>
+                                                <!-- Hover Effect (Base) -->
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="HeartIcon" Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                                <!-- Liked State (Overrides Hover Color if True) -->
+                                                <DataTrigger Binding="{Binding CurrentSong.IsLiked, FallbackValue=False}" Value="True">
+                                                    <Setter TargetName="HeartIcon" Property="Text" Value="&#xEB52;"/>
+                                                    <Setter TargetName="HeartIcon" Property="Foreground" Value="#87CEEB"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+                            <!-- Credits Card -->
+                            <Border Background="{DynamicResource ControlHoverBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,16">
+                                        <TextBlock Text="Credits" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="Bold" FontSize="16"/>
+                                    </Grid>
+                                    <Grid>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding CurrentSong.Artist}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" FontSize="16"/>
+                                            <TextBlock Foreground="{DynamicResource SecondaryTextBrush}" FontSize="14" Margin="0,2,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="Main Artist"/>
+                                                        <Setter Property="FontStyle" Value="Normal"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding CurrentSong}" Value="{x:Null}">
+                                                                <Setter Property="Text" Value="No artists available"/>
+                                                                <Setter Property="FontStyle" Value="Italic"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            <!-- Queue Card -->
+                            <Border Background="{DynamicResource ControlHoverBrush}" CornerRadius="8" Padding="16">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,12">
+                                        <TextBlock Text="Next in queue" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="Bold" FontSize="16"/>
+                                        <Button Content="Open queue"
+                                            Command="{Binding ToggleQueuePopupCommand}"
+                                            Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" FontWeight="Bold"
+                                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                                            Cursor="Hand" Background="Transparent" BorderThickness="0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <ContentPresenter/>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                    <ListBox ItemsSource="{Binding UpcomingSongs}"
+                                             MaxHeight="240"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             VirtualizingPanel.IsVirtualizing="True"
+                                             VirtualizingPanel.VirtualizationMode="Recycling">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,8" Background="Transparent">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <!-- Cover -->
+                                                    <Border CornerRadius="4" Width="40" Height="40" Margin="0,0,12,0">
+                                                        <Border.Background>
+                                                            <ImageBrush ImageSource="{Binding CoverArt, FallbackValue='/Resources/unknown_album.png'}" Stretch="UniformToFill"/>
+                                                        </Border.Background>
+                                                    </Border>
+                                                    <!-- Text -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Title}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding Artist}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <!-- Empty State Hint - Show when no song is playing -->
+                                    <TextBlock Text="No upcoming songs" Foreground="{DynamicResource SecondaryTextBrush}" FontStyle="Italic" FontSize="12" Margin="0,8,0,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CurrentSong}" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+            <!-- ============================================ -->
+            <!-- ROW 2: PLAYER BAR (Bottom)                   -->
+            <!-- ============================================ -->
+            <Border Grid.Row="2" Background="{DynamicResource AppBackgroundBrush}" BorderThickness="0">
+                <Grid Margin="16,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" MaxWidth="400"/>
+                        <ColumnDefinition Width="4*"/>
+                        <ColumnDefinition Width="3*" MaxWidth="300"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Left: Now Playing -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="56" Height="56" CornerRadius="4" Background="{DynamicResource CardBackgroundBrush}" Margin="0,0,14,0">
+                            <Grid>
+                                <TextBlock Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Image Source="{Binding CurrentSong.CoverArt}" Stretch="UniformToFill" Visibility="{Binding CurrentSong.HasCoverArt, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Image.Clip>
+                                        <RectangleGeometry Rect="0,0,56,56" RadiusX="4" RadiusY="4"/>
+                                    </Image.Clip>
+                                </Image>
+                            </Grid>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CurrentSong.Title, FallbackValue='No Song'}" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding CurrentSong.Artist}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <!-- Center: Controls -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+                            <!-- Shuffle -->
+                            <Button Margin="8,0" Command="{Binding ShuffleCommand}" ToolTip="Shuffle">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+                                        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsShuffleEnabled}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                <Setter Property="ToolTip" Value="Shuffle On"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <TextBlock Text="&#xE8B1;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                            </Button>
+                            <!-- Previous -->
+                            <Button Style="{StaticResource IconButtonStyle}" Margin="16,0" Command="{Binding PreviousCommand}" ToolTip="Previous">
+                                <TextBlock Text="&#xE892;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </Button>
+                            <!-- Play/Pause (Modern Circle) -->
+                            <Button Width="48" Height="48" Margin="16,0" Command="{Binding PlayPauseCommand}" ToolTip="Play/Pause">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Grid>
+                                            <Border x:Name="bdr" Background="#87CEEB" CornerRadius="24">
+                                                <Grid>
+                                                    <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="White"
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                        Visibility="{Binding IsPlaying, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                                    <TextBlock Text="&#xE769;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="White"
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                        Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                </Grid>
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="10" Color="#87CEEB" Opacity="0.4" ShadowDepth="0"/>
+                                                </Border.Effect>
+                                            </Border>
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="bdr" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <ScaleTransform ScaleX="1.05" ScaleY="1.05" CenterX="24" CenterY="24"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter TargetName="bdr" Property="Background" Value="#9FD9F6"/> <!-- Lighter Sky Blue -->
+                                                <Setter TargetName="bdr" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="15" Color="#87CEEB" Opacity="0.6" ShadowDepth="0"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="bdr" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95" CenterX="24" CenterY="24"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter TargetName="bdr" Property="Background" Value="#76B5D1"/> <!-- Darker Sky Blue -->
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <!-- Next -->
+                            <Button Style="{StaticResource IconButtonStyle}" Margin="16,0" Command="{Binding NextCommand}" ToolTip="Next">
+                                <TextBlock Text="&#xE893;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </Button>
+                            <!-- Repeat -->
+                            <Button Command="{Binding RepeatCommand}" ToolTip="Enable Repeat">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+                                        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RepeatMode}" Value="RepeatAll">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                <Setter Property="ToolTip" Value="Repeat All"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RepeatMode}" Value="RepeatOne">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                <Setter Property="ToolTip" Value="Repeat One"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="&#xE8EE;"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RepeatMode}" Value="RepeatOne">
+                                                    <Setter Property="Text" Value="&#xE8ED;"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button>
+                        </StackPanel>
+                        <Grid Width="400">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding CurrentTimeFormatted}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Slider x:Name="ProgressSlider" Grid.Column="1" Value="{Binding CurrentProgress}" Maximum="{Binding TotalDuration}" IsMoveToPointEnabled="True" Cursor="Hand"
+                                Thumb.DragStarted="Slider_DragStarted" Thumb.DragCompleted="Slider_DragCompleted"
+                                PreviewMouseLeftButtonDown="Slider_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="Slider_PreviewMouseLeftButtonUp">
+                                <Slider.Style>
+                                    <Style TargetType="Slider" BasedOn="{StaticResource ProgressSliderStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentSong}" Value="{x:Null}">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Slider.Style>
+                            </Slider>
+                            <TextBlock Grid.Column="2" Text="{Binding TotalTimeFormatted}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                    <!-- Right: Volume/Extra -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Command="{Binding ToggleQueuePopupCommand}" Style="{StaticResource IconButtonStyle}" Margin="8,0" ToolTip="Queue">
+                            <TextBlock Text="&#xE90B;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                        </Button>
+                        <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
+                            <Button Command="{Binding ToggleMuteCommand}"
+                                Style="{StaticResource IconButtonStyle}"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center">
+                                <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="&#xE995;"/> <!-- High Volume Default -->
+                                            <Style.Triggers>
+                                                <!-- Mute State (Higher Priority) -->
+                                                <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                                    <Setter Property="Text" Value="&#xE74F;"/> <!-- Mute -->
+                                                </DataTrigger>
+                                                <!-- Volume Level Based Triggers (Only applies if IsMuted is False) -->
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMuted}" Value="False"/>
+                                                        <Condition Binding="{Binding Volume, Converter={StaticResource LessThanConverter}, ConverterParameter=0.01}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Text" Value="&#xE74F;"/> <!-- Mute (0 volume) -->
+                                                </MultiDataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMuted}" Value="False"/>
+                                                        <Condition Binding="{Binding Volume, Converter={StaticResource LessThanConverter}, ConverterParameter=0.33}" Value="True"/>
+                                                        <Condition Binding="{Binding Volume, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0.01}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Text" Value="&#xE993;"/> <!-- Low Volume -->
+                                                </MultiDataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMuted}" Value="False"/>
+                                                        <Condition Binding="{Binding Volume, Converter={StaticResource LessThanConverter}, ConverterParameter=0.66}" Value="True"/>
+                                                        <Condition Binding="{Binding Volume, Converter={StaticResource GreaterThanConverter}, ConverterParameter=0.33}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Text" Value="&#xE994;"/> <!-- Medium Volume -->
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button>
+                            <Slider Width="100" Value="{Binding Volume}" Maximum="1" Style="{StaticResource VolumeSliderStyle}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <!-- Rename Playlist Popup Overlay -->
+            <Grid Visibility="{Binding IsRenamePopupOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                Background="#99000000"
+                Grid.RowSpan="3">
+                <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="12"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    MinWidth="420"
+                    MaxWidth="500">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" Color="Black" Opacity="0.6" ShadowDepth="10"/>
+                    </Border.Effect>
+                    <Grid Margin="32">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <!-- Header -->
+                        <TextBlock Text="Rename Playlist"
+                            Foreground="{DynamicResource PrimaryTextBrush}"
+                            FontSize="24"
+                            FontWeight="Bold"
+                            Margin="0,0,0,24"/>
+                        <!-- Input -->
+                        <StackPanel Grid.Row="1" Margin="0,0,0,32">
+                            <TextBlock Text="Name" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding RenameText, UpdateSourceTrigger=PropertyChanged}"
+                                Foreground="White"
+                                CaretBrush="#87CEEB"
+                                FontSize="16"
+                                VerticalContentAlignment="Center">
+                                <TextBox.Template>
+                                    <ControlTemplate TargetType="TextBox">
+                                        <Border x:Name="border"
+                                            Background="{DynamicResource ControlHoverBrush}"
+                                            CornerRadius="4"
+                                            BorderThickness="1"
+                                            BorderBrush="Transparent"
+                                            Padding="16,12">
+                                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="#484848"/>
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter TargetName="border" Property="BorderBrush" Value="#87CEEB"/>
+                                                <Setter TargetName="border" Property="Background" Value="#121212"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </TextBox.Template>
+                            </TextBox>
+                        </StackPanel>
+                        <!-- Buttons -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Cancel"
+                                Command="{Binding CancelRenameCommand}"
+                                Background="Transparent"
+                                Foreground="#B3B3B3"
+                                FontWeight="Bold"
+                                FontSize="14"
+                                BorderThickness="0"
+                                Margin="0,0,16,0"
+                                Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" Padding="24,12" CornerRadius="20">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <Button Content="Save"
+                                Command="{Binding ConfirmRenameCommand}"
+                                Background="#87CEEB"
+                                Foreground="Black"
+                                FontWeight="Bold"
+                                FontSize="14"
+                                BorderThickness="0"
+                                Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="32,12" CornerRadius="20">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="#1ED760"/>
+                                                <Setter TargetName="border" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="10" Color="#87CEEB" Opacity="0.4" ShadowDepth="0"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+            <!-- Queue Popup Overlay -->
+            <Grid Visibility="{Binding IsQueuePopupOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                Background="#99000000"
+                Grid.RowSpan="3"
+                Panel.ZIndex="100">
+                <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="12"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="500"
+                    MaxHeight="600">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" Color="Black" Opacity="0.6" ShadowDepth="10"/>
+                    </Border.Effect>
+                    <Grid Margin="32">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <!-- Header -->
+                        <Grid Margin="0,0,0,24">
+                            <TextBlock Text="Play Queue" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="24" FontWeight="Bold"/>
+                            <Button Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding CloseQueuePopupCommand}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                            </Button>
+                        </Grid>
+                        <!-- Content (List) -->
+                        <!-- Content (List) -->
+                        <Grid Grid.Row="1" Margin="0,0,0,32">
+                            <!-- Empty State Text - show only when CurrentSong is null (startup) -->
+                            <TextBlock Text="No upcoming songs" Foreground="{DynamicResource SecondaryTextBrush}" FontStyle="Italic" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentSong}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            
+                            <ListBox ItemsSource="{Binding UpcomingSongs}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="Transparent"/> <!-- Or a subtle hover effect if desired -->
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,8" Background="Transparent">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <!-- Cover -->
+                                            <Border CornerRadius="4" Width="48" Height="48" Margin="0,0,16,0">
+                                                <Border.Background>
+                                                    <ImageBrush ImageSource="{Binding CoverArt, FallbackValue='/Resources/unknown_album.png'}" Stretch="UniformToFill"/>
+                                                </Border.Background>
+                                            </Border>
+                                            <!-- Text -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Title}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Artist}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <!-- Remove Button -->
+                                            <Button Grid.Column="2"
+                                                Command="{Binding DataContext.RemoveFromQueueCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Remove from Queue" VerticalAlignment="Center">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <!-- Hide remove button if PlayQueue is empty (meaning these are auto-generated songs) -->
+                                                            <DataTrigger Binding="{Binding DataContext.PlayQueue.Count, RelativeSource={RelativeSource AncestorType=Window}}" Value="0">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                                <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#B3B3B3"/>
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                        <!-- Footer -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Clear Queue"
+                                Command="{Binding ClearQueueCommand}"
+                                Background="Transparent"
+                                Foreground="#FF5555"
+                                FontWeight="Bold"
+                                FontSize="14"
+                                BorderThickness="0"
+                                Margin="0,0,16,0"
+                                Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" Padding="16,8" CornerRadius="16">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding PlayQueue.Count}" Value="0">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                                <Setter Property="Opacity" Value="0.5"/>
+                                            </DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="0.8"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <Button Content="Close"
+                                Command="{Binding CloseQueuePopupCommand}"
+                                Background="#87CEEB"
+                                Foreground="White"
+                                FontWeight="Bold"
+                                FontSize="14"
+                                BorderThickness="0"
+                                Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" Padding="32,12" CornerRadius="20">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#9FD9F6"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="10" Color="White" Opacity="0.4" ShadowDepth="0"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
