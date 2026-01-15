@@ -2,13 +2,14 @@
 
 A modern, elegant, and lightweight desktop music player built for Windows. **Crescendo** combines a premium visual aesthetic with powerful library management, delivering a seamless listening experience.
 
-![Crescendo Dark Mode](Assets/Screenshot%202026-01-15%20221726.png)
+![Crescendo Main View](Assets/Screenshot%202026-01-15%20221726.png)
+*Experience your music in a beautifully crafted dark interface.*
 
 ## 📸 Gallery
 
-<p float="left">
-  <img src="Assets/Screenshot%202026-01-15%20221814.png" width="45%" />
-  <img src="Assets/Screenshot%202026-01-15%20221909.png" width="45%" /> 
+<p float="left" align="center">
+  <img src="Assets/Screenshot%202026-01-15%20221814.png" width="45%" alt="Playlist View" />
+  <img src="Assets/Screenshot%202026-01-15%20221909.png" width="45%" alt="Mini Player & Settings" /> 
 </p>
 
 ## ✨ Features
@@ -34,8 +35,8 @@ A modern, elegant, and lightweight desktop music player built for Windows. **Cre
 
 ## 📦 Installation
 
-1. Go to the [Releases](https://github.com/yourusername/Music-Crescendo-Player/releases) page.
-2. Download the latest `Crescendo_Setup_v18.exe`.
+1. Go to the [Releases](https://github.com/ArisaAkiyama/Music-Crescendo-Player/releases) page.
+2. Download the latest `Crescendo_Setup_v19.exe` (or latest Beta).
 3. Run the installer and follow the prompts.
 
 ## 🚀 Building from Source
@@ -46,7 +47,7 @@ Requirements:
 
 1. Clone functionality repository:
    ```bash
-   git clone https://github.com/yourusername/Music-Crescendo-Player.git
+   git clone https://github.com/ArisaAkiyama/Music-Crescendo-Player.git
    ```
 2. Open `DesktopMusicPlayer.sln` in Visual Studio.
 3. Restore NuGet packages.
