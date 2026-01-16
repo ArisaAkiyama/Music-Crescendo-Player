@@ -89,7 +89,10 @@ public class DatabaseService
     /// </summary>
     public static IDbConnection GetConnection()
     {
-        return new SQLiteConnection(ConnectionString);
+        var connection = new SQLiteConnection(ConnectionString);
+        connection.Open();
+        connection.Execute("PRAGMA foreign_keys = ON;");
+        return connection;
     }
 
     /// <summary>
@@ -99,7 +102,7 @@ public class DatabaseService
     public static void InitializeDatabase()
     {
         using var connection = GetConnection();
-        connection.Open();
+        // connection is already open from GetConnection()
 
         // Create Songs table with indexes
         connection.Execute(@"
@@ -161,7 +164,7 @@ public class DatabaseService
         {
             connection.Execute(@"
                 INSERT INTO Playlists (Name, IconGlyph, IsLikedSongs, IsSmart, SmartCriteria)
-                VALUES ('Liked Songs', '0xEB51', 1, 1, '{""Type"": ""LikedSongs""}')
+                VALUES ('Favorite Tracks', '0xEB51', 1, 1, '{""Type"": ""LikedSongs""}')
             ");
         }
     }

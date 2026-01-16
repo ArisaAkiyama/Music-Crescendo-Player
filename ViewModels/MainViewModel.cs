@@ -105,7 +105,7 @@ namespace DesktopMusicPlayer.ViewModels
             set => SetProperty(ref _isMuted, value);
         }
 
-        private double _volume = 0.5;
+        private double _volume; // Default 0.0, will trigger setter on first load
         public double Volume
         {
             get => _volume;
@@ -113,7 +113,12 @@ namespace DesktopMusicPlayer.ViewModels
             {
                 if (SetProperty(ref _volume, value))
                 {
-                    _audioService.Volume = (float)value;
+                    // Logarithmic volume control (safety first)
+                    // Input: 0.0 - 1.0 (Slider)
+                    // Output: Logarithmic curve (Cubic x^3) * 0.5 (Headroom/Pre-Gain)
+                    // This creates a "Normalized" loudness ceiling similar to Spotify (-14 LUFS)
+                    var logVolume = (float)Math.Pow(value, 3.0) * 0.5f;
+                    _audioService.Volume = logVolume;
                     
                     // Logic: If user drags slider (value > 0), unmute if muted.
                     // If user drags to 0, mute.
@@ -125,6 +130,9 @@ namespace DesktopMusicPlayer.ViewModels
                     {
                         IsMuted = true;
                     }
+
+                    // Save volume state (persisted)
+                    SettingsService.SaveVolume(value);
                 }
             }
         }
@@ -231,6 +239,22 @@ namespace DesktopMusicPlayer.ViewModels
             set => SetProperty(ref _isQueuePopupOpen, value);
         }
 
+        // Keyboard Shortcuts Popup
+        private bool _isShortcutsPopupOpen;
+        public bool IsShortcutsPopupOpen
+        {
+            get => _isShortcutsPopupOpen;
+            set => SetProperty(ref _isShortcutsPopupOpen, value);
+        }
+
+        // About Popup
+        private bool _isAboutPopupOpen;
+        public bool IsAboutPopupOpen
+        {
+            get => _isAboutPopupOpen;
+            set => SetProperty(ref _isAboutPopupOpen, value);
+        }
+
         private string _renameText = string.Empty;
         public string RenameText
         {
@@ -333,7 +357,7 @@ namespace DesktopMusicPlayer.ViewModels
         }
 
         // Content header title
-        private string _contentTitle = "All Songs";
+        private string _contentTitle = "All Tracks";
         public string ContentTitle
         {
             get => _contentTitle;
@@ -389,7 +413,10 @@ namespace DesktopMusicPlayer.ViewModels
         public ICommand SortCommand { get; }
         public ICommand ShowRecentlyPlayedCommand { get; }
         public ICommand ClearHistoryCommand { get; }
+
         public ICommand AddSongToPlaylistCommand { get; }
+        public ICommand CloseShortcutsPopupCommand { get; }
+        public ICommand CloseAboutPopupCommand { get; }
         public ICommand ExitApplicationCommand { get; }
         public ICommand SettingsCommand { get; }
         public ICommand ScrollToCurrentCommand { get; }
@@ -400,7 +427,6 @@ namespace DesktopMusicPlayer.ViewModels
         public ICommand FocusSearchCommand { get; }
         public ICommand ToggleSidebarCommand { get; }
         public ICommand ToggleFullScreenCommand { get; }
-        public ICommand ToggleMiniPlayerCommand { get; }
         public ICommand StopCommand { get; }
         public ICommand VolumeUpCommand { get; }
         public ICommand VolumeDownCommand { get; }
@@ -410,6 +436,14 @@ namespace DesktopMusicPlayer.ViewModels
         public ICommand KeyboardShortcutsCommand { get; }
         public ICommand AboutCommand { get; }
         public ICommand ToggleThemeCommand { get; }
+        public ICommand ToggleMyTracksCommand { get; }
+        
+        private bool _isMyTracksExpanded = true;
+        public bool IsMyTracksExpanded
+        {
+            get => _isMyTracksExpanded;
+            set => SetProperty(ref _isMyTracksExpanded, value);
+        }
 
         private bool _isDarkTheme = true;
         public bool IsDarkTheme
@@ -419,9 +453,11 @@ namespace DesktopMusicPlayer.ViewModels
         }
 
 
+
+
         // Actions for code-behind
         public Action? ToggleFullScreen { get; set; }
-        public Action? ToggleMiniPlayer { get; set; }
+        public Action? ScrollToCurrentAction { get; set; }
 
         // Sidebar visibility
         private bool _isSidebarVisible = true;
@@ -449,9 +485,18 @@ namespace DesktopMusicPlayer.ViewModels
 
         public MainViewModel()
         {
+            // Set default visibility
+            IsQueueVisible = true;
+            
             // Initialize services
             _audioService = new AudioService();
             _musicProvider = new MusicProviderService();
+            
+            // Set default visibility
+            IsQueueVisible = true;
+            
+            // Load saved volume (or default 0.5) using Setter to apply Cubic Logic
+            Volume = SettingsService.GetVolume();
             _playlistService = new PlaylistService();
             
             // Initialize SQLite repositories
@@ -533,12 +578,13 @@ namespace DesktopMusicPlayer.ViewModels
             KeyboardShortcutsCommand = new RelayCommand(_ => ShowKeyboardShortcuts());
             AboutCommand = new RelayCommand(_ => ShowAbout());
             ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
+            ToggleMyTracksCommand = new RelayCommand(_ => IsMyTracksExpanded = !IsMyTracksExpanded);
             HomeCommand = new RelayCommand(_ => 
             { 
                  SelectedPlaylist = null;
                  SearchText = string.Empty;
                  LibrarySearchText = string.Empty;
-                 ContentTitle = "All Songs";
+                 ContentTitle = "All Tracks";
                  // Ensure 'All Songs' filter applies
                  if (SongsView is ICollectionView view)
                  {
@@ -560,36 +606,14 @@ namespace DesktopMusicPlayer.ViewModels
             });
             ToggleSidebarCommand = new RelayCommand(_ => IsSidebarVisible = !IsSidebarVisible);
             ToggleFullScreenCommand = new RelayCommand(_ => ToggleFullScreen?.Invoke());
-            ToggleMiniPlayerCommand = new RelayCommand(_ => ToggleMiniPlayer?.Invoke());
             StopCommand = new RelayCommand(_ => Stop());
             VolumeUpCommand = new RelayCommand(_ => Volume = Math.Min(1.0, Volume + 0.1));
             VolumeDownCommand = new RelayCommand(_ => Volume = Math.Max(0.0, Volume - 0.1));
             SetRepeatOffCommand = new RelayCommand(_ => RepeatMode = PlaybackRepeatMode.Off);
             SetRepeatAllCommand = new RelayCommand(_ => RepeatMode = PlaybackRepeatMode.RepeatAll);
             SetRepeatOneCommand = new RelayCommand(_ => RepeatMode = PlaybackRepeatMode.RepeatOne);
-            KeyboardShortcutsCommand = new RelayCommand(_ => MessageBox.Show(
-                "⌨️ Keyboard Shortcuts\n\n" +
-                "Space          Play/Pause\n" +
-                "Ctrl+→        Next Track\n" +
-                "Ctrl+←        Previous Track\n" +
-                "→               Forward 5s\n" +
-                "←               Rewind 5s\n" +
-                "↑                Volume Up\n" +
-                "↓                Volume Down\n" +
-                "M               Mute\n" +
-                "F11            Full Screen\n" +
-                "Ctrl+A        Select All\n" +
-                "Ctrl+F        Find",
-                "Keyboard Shortcuts", MessageBoxButton.OK, MessageBoxImage.Information));
-            AboutCommand = new RelayCommand(_ => MessageBox.Show(
-                "🎵 Crescendo\n\n" +
-                "Version: 1.0.0\n" +
-                "Build: 2026.01.15\n\n" +
-                "A modern music player built with WPF.\n\n" +
-                "Credits:\n" +
-                "Arisa Akiyama\n\n" +
-                "© 2026 Crescendo. All rights reserved.",
-                "About Crescendo", MessageBoxButton.OK, MessageBoxImage.Information));
+            KeyboardShortcutsCommand = new RelayCommand(_ => IsShortcutsPopupOpen = !IsShortcutsPopupOpen);
+            AboutCommand = new RelayCommand(_ => IsAboutPopupOpen = !IsAboutPopupOpen);
             AddPlaylistCommand = new RelayCommand(_ => AddNewPlaylist());
             AddFolderCommand = new RelayCommand(_ => OpenFolder()); // Opens folder picker dialog
             AddFilesCommand = new RelayCommand(_ => AddMp3Files()); // Opens file picker dialog
@@ -614,19 +638,19 @@ namespace DesktopMusicPlayer.ViewModels
             ShowRecentlyPlayedCommand = new RelayCommand(_ => ShowRecentlyPlayed());
             ClearHistoryCommand = new RelayCommand(_ => ClearHistory());
             AddSongToPlaylistCommand = new RelayCommand(param => AddSongToPlaylist(param));
+            CloseShortcutsPopupCommand = new RelayCommand(_ => IsShortcutsPopupOpen = false);
+            CloseAboutPopupCommand = new RelayCommand(_ => IsAboutPopupOpen = false);
 
             ExitApplicationCommand = new RelayCommand(_ => Application.Current.Shutdown());
             SettingsCommand = new RelayCommand(_ => MessageBox.Show("Settings not implemented yet.", "Settings"));
-            ScrollToCurrentCommand = new RelayCommand(_ => ScrollToCurrent());
+            ScrollToCurrentCommand = new RelayCommand(_ => ScrollToCurrentAction?.Invoke());
             ToggleLibrarySearchCommand = new RelayCommand(_ => IsLibrarySearchVisible = !IsLibrarySearchVisible);
             CloseLibrarySearchCommand = new RelayCommand(_ => { IsLibrarySearchVisible = false; LibrarySearchText = ""; });
+            ToggleMyTracksCommand = new RelayCommand(_ => IsMyTracksExpanded = !IsMyTracksExpanded);
 
             // Initialize collection view for filtering (empty at this point)
             InitializeCollectionView();
 
-            // Set initial volume
-            _audioService.Volume = (float)Volume;
-            
             // Note: Data loading is deferred to InitializeDataAsync() 
             // which should be called from MainWindow.Loaded event
         }
@@ -642,38 +666,145 @@ namespace DesktopMusicPlayer.ViewModels
             
             try
             {
+                // Phase 0: Cleanup orphan songs (Zombie songs from previous bugs)
+                await Task.Run(() => 
+                {
+                    int deleted = _songRepository.DeleteOrphanSongs();
+                    if (deleted > 0) System.Diagnostics.Debug.WriteLine($"Cleaned up {deleted} orphan songs.");
+                });
+
+            // Phase 0.5: Rename existing 'Liked Songs' to 'Favorite Tracks' (Migration)
+                await Task.Run(() =>
+                {
+                    var likedPlaylist = _playlistRepository.GetLikedSongsPlaylist();
+                    if (likedPlaylist != null && likedPlaylist.Name == "Liked Songs")
+                    {
+                        likedPlaylist.Name = "Favorite Tracks";
+                        _playlistRepository.UpdatePlaylist(likedPlaylist);
+                        System.Diagnostics.Debug.WriteLine("Migrated 'Liked Songs' to 'Favorite Tracks'");
+                    }
+                });
+
                 // Phase 1: Load playlists metadata from DB (fast, can be on background)
                 var playlistsFromDb = await Task.Run(() => _playlistRepository.GetAllPlaylists().ToList());
-                
-                // Phase 2: Add playlists to collection on UI thread
+
+                // Phase 1.5: Migrate from JSON if DB is empty
+                if (!playlistsFromDb.Any())
+                {
+                    await Task.Run(() =>
+                    {
+                        try 
+                        {
+                            var legacyPlaylists = _playlistService.LoadPlaylists(); // JSON load
+                            if (legacyPlaylists.Any())
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Found {legacyPlaylists.Count} legacy playlists. Migrating to SQLite...");
+                                foreach (var playlist in legacyPlaylists)
+                                {
+                                     // Add playlist to DB
+                                     _playlistRepository.AddPlaylist(playlist);
+                                     
+                                     // Migrate songs
+                                     foreach (var songPath in playlist.SongPaths)
+                                     {
+                                         if (!System.IO.File.Exists(songPath)) continue;
+                                         
+                                         // Check if song exists in DB by path
+                                         var existingSong = _songRepository.GetSongByFilePath(songPath);
+                                         if (existingSong == null)
+                                         {
+                                              // Load metadata from file
+                                              var song = _musicProvider.GetSongFromFile(songPath);
+                                              if (song != null)
+                                              {
+                                                  // Restore IsLiked if this is Favorite Tracks
+                                                  if (playlist.IsLikedSongs) song.IsLiked = true;
+                                                  
+                                                  _songRepository.AddSong(song);
+                                                  existingSong = song;
+                                              }
+                                         }
+                                         else if (playlist.IsLikedSongs)
+                                         {
+                                             // Ensure IsLiked is true for existing song
+                                             if (!existingSong.IsLiked)
+                                             {
+                                                 existingSong.IsLiked = true;
+                                                 _songRepository.UpdateLikedStatus(existingSong.Id, true);
+                                             }
+                                         }
+                                         
+                                         // Link song to playlist (unless Smart)
+                                         if (existingSong != null && !playlist.IsSmart)
+                                         {
+                                            _playlistRepository.AddSongToPlaylist(playlist.Id, existingSong.Id);
+                                         }
+                                     }
+                                }
+                                System.Diagnostics.Debug.WriteLine("Migration complete.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                             System.Diagnostics.Debug.WriteLine("Migration failed: " + ex.Message);
+                        }
+                    });
+                    
+                    // Re-fetch from DB after migration
+                    playlistsFromDb = await Task.Run(() => _playlistRepository.GetAllPlaylists().ToList());
+                }
+
+                // OPTIMIZATION: Load all songs first to ensure shared instances (Flyweight Pattern)
+                // This prevents memory duplication and ensures 'Like' status is consistent across playlists
+                var allSongs = await Task.Run(() => _songRepository.GetAllSongs().OrderByDescending(s => s.DateAdded).ToList());
+                var songLookup = allSongs.ToDictionary(s => s.Id);
+
+                // Prepare playlists in background with shared song instances
                 foreach (var playlist in playlistsFromDb)
                 {
-                    // Load songs for this playlist (DB query can be on background per playlist)
-                    var playlistSongs = await Task.Run(() => _playlistRepository.GetSongsForPlaylist(playlist).ToList());
+                    // Get song associations (IDs/basic info) for this playlist
+                    // We re-fetch to resolve smart playlist criteria dynamically
+                    var playlistRawSongs = await Task.Run(() => _playlistRepository.GetSongsForPlaylist(playlist).ToList());
                     
-                    foreach (var song in playlistSongs)
+                    foreach (var rawSong in playlistRawSongs)
                     {
-                        playlist.Songs.Add(song);
-                        
-                        // Add song to main library if not already there
-                        if (!Songs.Any(s => s.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase)))
+                        // Use the shared instance from main library if available
+                        if (songLookup.TryGetValue(rawSong.Id, out var sharedSong))
                         {
-                            Songs.Add(song);
+                             playlist.Songs.Add(sharedSong);
+                        }
+                        else
+                        {
+                            // Fallback: This song exists in playlist query but wasn't in GetAllSongs?
+                            // Should be rare, but we add it to lookup to maintain consistency
+                            songLookup[rawSong.Id] = rawSong;
+                            playlist.Songs.Add(rawSong);
+                            
+                            // Also need to ensure it ends up in the main list
+                            allSongs.Add(rawSong);
                         }
                     }
-                    
-                    Playlists.Add(playlist);
                 }
-                
-                // Phase 3: Load songs from database that aren't in playlists
-                var songsFromDb = await Task.Run(() => _songRepository.GetAllSongs().ToList());
-                foreach (var song in songsFromDb)
+
+                // Batch Update UI (Single Dispatcher Invoke)
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    if (!Songs.Any(s => s.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase)))
+                    // Clear existing (assuming full reload)
+                    Songs.Clear();
+                    Playlists.Clear();
+
+                    // Add all songs to Library
+                    foreach (var song in allSongs)
                     {
                         Songs.Add(song);
                     }
-                }
+
+                    // Add playlists
+                    foreach (var playlist in playlistsFromDb)
+                    {
+                        Playlists.Add(playlist);
+                    }
+                });
                 
                 // Phase 4: Load history
                 await Task.Run(() =>
@@ -688,6 +819,11 @@ namespace DesktopMusicPlayer.ViewModels
                     SongsView?.Refresh();
                     PlaylistsView?.Refresh();
                     UpdateSongCount();
+                    
+                    // Force re-apply volume setting to ensure AudioService is synced
+                    // This fixes the "Loud Start" bug by triggering the Cubic + Headroom logic again
+                    var savedVol = _volume;
+                    Volume = savedVol;
                     
                     // DEBUG: Check if songs are loaded
                     // MessageBox.Show($"Debug: Loaded {Songs.Count} songs from database.\nPlaylists: {Playlists.Count}\nDB Path: {DesktopMusicPlayer.Services.DatabaseService.GetDatabasePath()}", "Startup Debug");
@@ -788,175 +924,9 @@ namespace DesktopMusicPlayer.ViewModels
             return false;
         }
 
-        private void LoadPlaylists()
-        {
-            // Try to load from SQLite first, fallback to JSON for migration
-            var sqlitePlaylists = _playlistRepository.GetAllPlaylists().ToList();
-            
-            if (sqlitePlaylists.Any())
-            {
-                // Load from SQLite database
-                Playlists.Clear();
-                foreach (var playlist in sqlitePlaylists)
-                {
-                    // Load songs for this playlist from database
-                    var playlistSongs = _playlistRepository.GetSongsForPlaylist(playlist);
-                    foreach (var song in playlistSongs)
-                    {
-                        // Load cover art
-                        if (System.IO.File.Exists(song.FilePath))
-                        {
-                            var fullSong = _musicProvider.GetSongFromFile(song.FilePath);
-                            if (fullSong != null)
-                            {
-                                song.CoverArt = fullSong.CoverArt;
-                            }
-                        }
-                        playlist.Songs.Add(song);
-                    }
-                    
-                    Playlists.Add(playlist);
-                }
-            }
-            else
-            {
-                // Fallback to JSON (for migration) 
-                var loadedPlaylists = _playlistService.LoadPlaylists();
-                Playlists.Clear();
-                foreach (var playlist in loadedPlaylists)
-                {
-                    // Migrate playlist to SQLite
-                    _playlistRepository.AddPlaylist(playlist);
-                    
-                    // Migrate songs from SongPaths
-                    foreach (var songPath in playlist.SongPaths)
-                    {
-                        if (!System.IO.File.Exists(songPath))
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[SKIP] File not found: {songPath}");
-                            continue;
-                        }
-                        
-                        // Check if song already in database
-                        var existingSong = _songRepository.GetSongByFilePath(songPath);
-                        
-                        if (existingSong == null)
-                        {
-                            // Load and save song to database
-                            var song = _musicProvider.GetSongFromFile(songPath);
-                            if (song != null)
-                            {
-                                // Set IsLiked if this is the Liked Songs playlist
-                                if (playlist.IsLikedSongs)
-                                {
-                                    song.IsLiked = true;
-                                }
-                                
-                                _songRepository.AddSong(song);
-                                existingSong = song;
-                            }
-                            else
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[SKIP] Failed to load metadata: {songPath}");
-                            }
-                        }
-                        
-                        // Add to junction table if not a smart playlist
-                        if (existingSong != null && !playlist.IsSmart)
-                        {
-                            _playlistRepository.AddSongToPlaylist(playlist.Id, existingSong.Id);
-                        }
-                        
-                        // Add to Songs collection
-                        if (existingSong != null)
-                        {
-                            playlist.Songs.Add(existingSong);
-                        }
-                    }
-                    
-                    System.Diagnostics.Debug.WriteLine($"Playlist '{playlist.Name}': SongPaths={playlist.SongPaths.Count}, Loaded={playlist.Songs.Count}");
-                    
-                    Playlists.Add(playlist);
-                }
-                
-                System.Diagnostics.Debug.WriteLine("Migrated playlists from JSON to SQLite");
-            }
-            
-            // Also load songs from database
-            LoadSongsFromDatabase();
-        }
-        
-        private void LoadSongsFromDatabase()
-        {
-            // Load all songs from SQLite database
-            var songsFromDb = _songRepository.GetAllSongs().ToList();
-            
-            foreach (var song in songsFromDb)
-            {
-                // Load cover art if file exists by re-reading metadata
-                if (System.IO.File.Exists(song.FilePath))
-                {
-                    var fullSong = _musicProvider.GetSongFromFile(song.FilePath);
-                    if (fullSong != null)
-                    {
-                        song.CoverArt = fullSong.CoverArt;
-                    }
-                }
-                
-                if (!Songs.Any(s => s.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase)))
-                {
-                    Songs.Add(song);
-                }
-            }
-        }
 
-        private void ResolveSongsFromPlaylistPaths()
-        {
-            // For each playlist, load songs from their saved paths
-            foreach (var playlist in Playlists)
-            {
-                foreach (var songPath in playlist.SongPaths)
-                {
-                    if (!System.IO.File.Exists(songPath)) continue;
-                    
-                    // Check if song already in main library
-                    var existingSong = Songs.FirstOrDefault(s => s.FilePath.Equals(songPath, StringComparison.OrdinalIgnoreCase));
-                    
-                    if (existingSong == null)
-                    {
-                        // Load song from file
-                        var song = _musicProvider.GetSongFromFile(songPath);
-                        if (song != null)
-                        {
-                            song.Id = Songs.Count + 1;
-                            Songs.Add(song);
-                            existingSong = song;
-                        }
-                    }
-                    
-                    if (existingSong != null)
-                    {
-                        // Handle Liked Songs - restore IsLiked status
-                        if (playlist.IsLikedSongs)
-                        {
-                            existingSong.IsLiked = true;
-                            if (!playlist.Songs.Contains(existingSong))
-                            {
-                                playlist.Songs.Add(existingSong);
-                            }
-                        }
-                        else
-                        {
-                            // Add to regular playlist if not already there
-                            if (!playlist.Songs.Contains(existingSong))
-                            {
-                                playlist.Songs.Add(existingSong);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+
+
 
         private void LoadHistoryData()
         {
@@ -1265,7 +1235,7 @@ namespace DesktopMusicPlayer.ViewModels
                 return;
             }
             
-            // Get file paths of songs to remove
+            // Get file paths of songs to remove (orphan songs)
             var songPathsToRemove = new List<string>();
             foreach (var song in playlistToDelete.Songs)
             {
@@ -1280,52 +1250,26 @@ namespace DesktopMusicPlayer.ViewModels
                 }
             }
             
-            // Remove songs from global Songs collection
-            var songsToRemove = Songs.Where(s => songPathsToRemove.Contains(s.FilePath)).ToList();
-            foreach (var song in songsToRemove)
-            {
-                Songs.Remove(song);
-            }
-            
-            // Also remove from Liked Songs playlist
-            var likedSongsPlaylist = Playlists.FirstOrDefault(p => p.IsLikedSongs);
-            if (likedSongsPlaylist != null)
-            {
-                // Remove matching songs by FilePath
-                var likedSongsToRemove = likedSongsPlaylist.Songs
-                    .Where(s => songPathsToRemove.Contains(s.FilePath)).ToList();
-                
-                foreach (var likedSong in likedSongsToRemove)
-                {
-                    likedSongsPlaylist.Songs.Remove(likedSong);
-                }
-            }
-            
-            // Clear selection if deleting the selected playlist
-            if (SelectedPlaylist == playlistToDelete)
-            {
-                SelectedPlaylist = null;
-                GoHome();
-            }
-            
             // Remove from collection
             Playlists.Remove(playlistToDelete);
             
-            // Re-number IDs
-            for (int i = 0; i < Playlists.Count; i++)
+            // Delete from SQLite database
+            if (playlistToDelete.Id > 0)
             {
-                Playlists[i].Id = i + 1;
+                _playlistRepository.DeletePlaylist(playlistToDelete.Id);
             }
             
-            // Re-number song IDs
-            for (int i = 0; i < Songs.Count; i++)
+            // Remove orphan songs from global library and database
+            // Use the centralized method to ensure all cleanups (Favorites, Queue, DB, Playback) happen correctly
+            var songsToRemove = Songs.Where(s => songPathsToRemove.Contains(s.FilePath)).ToList();
+            foreach (var song in songsToRemove)
             {
-                Songs[i].Id = i + 1;
+                RemoveFromLibrary(song); 
             }
             
-            SavePlaylists();
+
             
-            System.Diagnostics.Debug.WriteLine($"Deleted playlist. Removed {songsToRemove.Count} songs from library.");
+            System.Diagnostics.Debug.WriteLine($"Deleted playlist '{playlistToDelete.Name}'. Removed {songsToRemove.Count} songs from library.");
         }
 
         private void OpenRenamePopup(object? parameter = null)
@@ -1361,7 +1305,7 @@ namespace DesktopMusicPlayer.ViewModels
             // Apply the new name
             SelectedPlaylist.Name = RenameText.Trim();
             ContentTitle = SelectedPlaylist.Name;
-            SavePlaylists();
+
             
             // Close popup
             IsRenamePopupOpen = false;
@@ -1377,7 +1321,7 @@ namespace DesktopMusicPlayer.ViewModels
         private void GoHome()
         {
             SelectedPlaylist = null;
-            ContentTitle = "All Songs";
+            ContentTitle = "All Tracks";
             
             // Re-initialize SongsView with Songs collection (in case it was changed to RecentlyPlayedSongs)
             SongsView = CollectionViewSource.GetDefaultView(Songs);
@@ -1396,12 +1340,12 @@ namespace DesktopMusicPlayer.ViewModels
             if (SelectedPlaylist == null)
             {
                 // Show all songs
-                ContentTitle = "All Songs";
+                ContentTitle = "All Tracks";
             }
             else if (SelectedPlaylist.IsLikedSongs)
             {
                 // Show only liked songs
-                ContentTitle = "Liked Songs";
+                ContentTitle = "Favorite Tracks";
             }
             else
             {
@@ -1486,14 +1430,14 @@ namespace DesktopMusicPlayer.ViewModels
                     // Load songs and associate with playlist
                     await LoadSongsFromPathToPlaylist(folderPath, newPlaylist);
                     
-                    SavePlaylists();
+
                     SelectedPlaylist = newPlaylist;
                 }
                 else
                 {
                     // Update existing playlist
                     await LoadSongsFromPathToPlaylist(folderPath, existingPlaylist);
-                    SavePlaylists();
+
                     SelectedPlaylist = existingPlaylist;
                 }
                 
@@ -1568,40 +1512,36 @@ namespace DesktopMusicPlayer.ViewModels
             
             targetSong.IsLiked = !targetSong.IsLiked;
             
-            // Update Liked Songs playlist for persistence
-            var likedPlaylist = Playlists.FirstOrDefault(p => p.IsLikedSongs);
-            if (likedPlaylist != null)
+            // Sync to SQLite immediately
+            if (targetSong.Id > 0)
+            {
+                _songRepository.UpdateLikedStatus(targetSong.Id, targetSong.IsLiked);
+            }
+            
+            // Update Favorite Tracks playlist in memory
+            var favoritePlaylist = Playlists.FirstOrDefault(p => p.IsLikedSongs);
+            if (favoritePlaylist != null)
             {
                 if (targetSong.IsLiked)
                 {
-                    // Add to Liked Songs
-                    if (!likedPlaylist.SongPaths.Contains(targetSong.FilePath))
+                    // Add if not exists
+                    if (!favoritePlaylist.Songs.Any(s => s.FilePath.Equals(targetSong.FilePath, StringComparison.OrdinalIgnoreCase)))
                     {
-                        likedPlaylist.SongPaths.Add(targetSong.FilePath);
-                    }
-                    if (!likedPlaylist.Songs.Contains(targetSong))
-                    {
-                        likedPlaylist.Songs.Add(targetSong);
+                        favoritePlaylist.Songs.Add(targetSong);
                     }
                 }
                 else
                 {
-                    // Remove from Liked Songs
-                    likedPlaylist.SongPaths.Remove(targetSong.FilePath);
-                    likedPlaylist.Songs.Remove(targetSong);
-                }
-                
-                // Save to JSON
-                SavePlaylists();
-                
-                // Sync liked status to SQLite database
-                if (targetSong.Id > 0)
-                {
-                    _songRepository.UpdateLikedStatus(targetSong.Id, targetSong.IsLiked);
+                    // Remove if exists
+                    var existing = favoritePlaylist.Songs.FirstOrDefault(s => s.FilePath.Equals(targetSong.FilePath, StringComparison.OrdinalIgnoreCase));
+                    if (existing != null)
+                    {
+                        favoritePlaylist.Songs.Remove(existing);
+                    }
                 }
             }
             
-            // Refresh view if showing Liked Songs
+            // Refresh view if showing
             SongsView?.Refresh();
             
             // Update UI binding for Love button
@@ -1611,46 +1551,83 @@ namespace DesktopMusicPlayer.ViewModels
             }
         }
 
-        private void ScrollToCurrent()
-        {
-            // Implementation requires View access - skipping for now to fix build
-        }
+
 
         private void RemoveFromLibrary(Song? song)
+{
+    if (song == null) return;
+    
+    // If removing current song, stop playback and clear current song
+    if (CurrentSong == song)
+    {
+        _audioService.Stop();
+        IsPlaying = false;
+        _progressTimer.Stop();
+        CurrentSong = null;  // Always show "No Song" when currently playing song is removed
+    }
+    
+    // Remove from Songs collection
+    Songs.Remove(song);
+    
+    // Remove from queue if present
+    var queueItem = PlayQueue.FirstOrDefault(s => s.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase));
+    if (queueItem != null)
+    {
+        PlayQueue.Remove(queueItem);
+        OnPropertyChanged(nameof(UpcomingSongs));
+    }
+    
+    // Remove from database (with error handling)
+    if (song.Id > 0)
+    {
+        try
         {
-            if (song == null) return;
-            
-            // If removing current song, stop playback and select next
-            if (CurrentSong == song)
+            _songRepository.DeleteSong(song.Id);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to delete song from DB: {ex.Message}");
+            // Continue execution to ensure UI is updated even if DB fails
+        }
+    }
+    
+    // Remove from all playlists' Songs collections (triggers SongCountText update)
+    // We execute this regardless of DB success to ensure UI consistency
+    foreach (var playlist in Playlists)
+    {
+        // Special aggressive check for Favorite Tracks (Smart + LikedSongs)
+        // We check this REGARDLESS of song.IsLiked state to ensure consistency
+        if (playlist.IsSmart && playlist.IsLikedSongs)
+        {
+             // Try to find and remove by path
+             var favoriteSong = playlist.Songs.FirstOrDefault(s => s.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase));
+             if (favoriteSong != null)
+             {
+                 playlist.Songs.Remove(favoriteSong);
+             }
+             // Optional: If not found, we could force refresh, but removing by path is usually sufficient 
+             // and safer against race conditions where the song might not be in DB yet.
+        }
+        else
+        {
+            // For regular playlists
+            var playlistSong = playlist.Songs.FirstOrDefault(s => s.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase));
+            if (playlistSong != null)
             {
-                _audioService.Stop();
-                IsPlaying = false;
-                _progressTimer.Stop();
-                
-                var index = Songs.IndexOf(song);
-                Songs.Remove(song);
-                
-                if (Songs.Count > 0)
-                {
-                    CurrentSong = Songs[Math.Min(index, Songs.Count - 1)];
-                }
-                else
-                {
-                    CurrentSong = null;
-                }
-            }
-            else
-            {
-                Songs.Remove(song);
-            }
-            
-            // Re-number songs
-            for (int i = 0; i < Songs.Count; i++)
-            {
-                Songs[i].Id = i + 1;
+                playlist.Songs.Remove(playlistSong);
             }
         }
-
+    }
+    
+    // Re-number songs
+    for (int i = 0; i < Songs.Count; i++)
+    {
+        Songs[i].Id = i + 1;
+    }
+    
+    // Refresh view
+    SongsView?.Refresh();
+}
         private void AddToPlaylist(Song? song)
         {
             if (song == null) return;
@@ -1691,7 +1668,7 @@ namespace DesktopMusicPlayer.ViewModels
                 }
                 
                 // Save changes to JSON
-                SavePlaylists();
+
                 
                 // Refresh view if this playlist is selected
                 if (SelectedPlaylist == playlist)
@@ -1792,15 +1769,26 @@ namespace DesktopMusicPlayer.ViewModels
 
             _audioService.LoadFile(CurrentSong.FilePath);
             
-            // Sync volume from ViewModel to ensure consistent volume
-            _audioService.Volume = (float)_volume;
+            // Sync volume from ViewModel using safe logic
+            _audioService.Volume = (float)Math.Pow(_volume, 3.0) * 0.5f;
             
             TotalDuration = _audioService.Duration.TotalSeconds;
-            TotalTimeFormatted = _audioService.Duration.ToString(@"m\:ss");
-            CurrentProgress = 0;
-            CurrentTimeFormatted = "0:00";
+    TotalTimeFormatted = _audioService.Duration.ToString(@"m\:ss");
+    CurrentProgress = 0;
+    CurrentTimeFormatted = "0:00";
 
-            // Resume playback if was playing before
+    // Auto-fix Duration Metadata:
+    // If actual audio duration differs significantly from metadata (e.g. VBR header issue or truncated file),
+    // update the database so the UI shows the correct length next time.
+    if (TotalDuration > 0 && Math.Abs(TotalDuration - CurrentSong.Duration.TotalSeconds) > 2)
+    {
+        CurrentSong.Duration = TimeSpan.FromSeconds(TotalDuration);
+        // Fire and forget update to avoid blocking UI
+        System.Threading.Tasks.Task.Run(() => _songRepository.UpdateSong(CurrentSong));
+        System.Diagnostics.Debug.WriteLine($"Auto-corrected duration for '{CurrentSong.Title}' to {CurrentSong.Duration}");
+    }
+
+    // Resume playback if was playing before
             if (wasPlaying)
             {
                 _audioService.Play();
@@ -2033,9 +2021,12 @@ namespace DesktopMusicPlayer.ViewModels
                     switch (RepeatMode)
                     {
                         case PlaybackRepeatMode.RepeatOne:
-                            // Repeats the same song
+                            // Repeats the same song - properly restart all playback state
                             _audioService.Position = TimeSpan.Zero;
                             _audioService.Play();
+                            IsPlaying = true;
+                            _progressTimer.Start();
+                            System.Diagnostics.Debug.WriteLine("RepeatOne: Restarting song");
                             break;
 
                         case PlaybackRepeatMode.RepeatAll:
@@ -2111,7 +2102,45 @@ namespace DesktopMusicPlayer.ViewModels
         }
 
 
-        private void ToggleTheme()
+        private async void ToggleTheme()
+        {
+            var window = Application.Current.MainWindow;
+            if (window == null)
+            {
+                // Fallback: just change theme without animation
+                ApplyThemeChange();
+                return;
+            }
+
+            // Smooth opacity transition
+            const double targetOpacity = 0.5;
+            const int animationDurationMs = 150; // 150ms fade out + 150ms fade in = 300ms total
+            const int steps = 10;
+            double originalOpacity = window.Opacity;
+            double stepSize = (originalOpacity - targetOpacity) / steps;
+            int stepDelay = animationDurationMs / steps;
+
+            // Fade out to target opacity
+            for (int i = 0; i < steps; i++)
+            {
+                window.Opacity -= stepSize;
+                await System.Threading.Tasks.Task.Delay(stepDelay);
+            }
+            window.Opacity = targetOpacity;
+
+            // Apply theme change
+            ApplyThemeChange();
+
+            // Fade back in to full opacity
+            for (int i = 0; i < steps; i++)
+            {
+                window.Opacity += stepSize;
+                await System.Threading.Tasks.Task.Delay(stepDelay);
+            }
+            window.Opacity = originalOpacity;
+        }
+
+        private void ApplyThemeChange()
         {
             IsDarkTheme = !IsDarkTheme;
             var themeUri = IsDarkTheme 

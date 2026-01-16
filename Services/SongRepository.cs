@@ -142,11 +142,28 @@ public class SongRepository
     }
 
     /// <summary>
-    /// Delete a song by ID.
+    /// Delete songs that are not in any playlist and not liked.
+    /// </summary>
+    public int DeleteOrphanSongs()
+    {
+        using var connection = DatabaseService.GetConnection();
+        return connection.Execute(@"
+            DELETE FROM Songs 
+            WHERE IsLiked = 0 
+            AND Id NOT IN (SELECT DISTINCT SongId FROM PlaylistSongs)");
+    }
+
+    /// <summary>
+    /// Delete a song by ID. Also removes from PlaylistSongs junction table.
     /// </summary>
     public void DeleteSong(int songId)
     {
         using var connection = DatabaseService.GetConnection();
+        
+        // First remove from PlaylistSongs junction table
+        connection.Execute("DELETE FROM PlaylistSongs WHERE SongId = @Id", new { Id = songId });
+        
+        // Then remove from Songs table
         connection.Execute("DELETE FROM Songs WHERE Id = @Id", new { Id = songId });
     }
 

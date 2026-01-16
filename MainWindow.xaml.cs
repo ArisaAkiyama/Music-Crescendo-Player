@@ -39,8 +39,15 @@ public partial class MainWindow : Window
                 vm.DeselectAllSongs = () => SongsDataGrid.UnselectAll();
                 vm.FocusSearchBox = () =>
                 {
-                    LibrarySearchBox.Focus();
-                    Keyboard.Focus(LibrarySearchBox);
+                    NavbarSearchBox.Focus();
+                    Keyboard.Focus(NavbarSearchBox);
+                };
+                vm.ScrollToCurrentAction = () =>
+                {
+                    if (vm.CurrentSong != null)
+                    {
+                        SongsDataGrid.ScrollIntoView(vm.CurrentSong);
+                    }
                 };
                 vm.ToggleFullScreen = () =>
                 {
@@ -59,28 +66,7 @@ public partial class MainWindow : Window
                         ResizeMode = ResizeMode.NoResize;
                     }
                 };
-                vm.ToggleMiniPlayer = () =>
-                {
-                    if (Width > 400)
-                    {
-                        // Switch to Mini Player
-                        _previousWidth = Width;
-                        _previousHeight = Height;
-                        _previousState = WindowState;
-                        WindowState = WindowState.Normal;
-                        Width = 350;
-                        Height = 120;
-                        Topmost = true;
-                    }
-                    else
-                    {
-                        // Restore from Mini Player
-                        Width = _previousWidth > 400 ? _previousWidth : 1200;
-                        Height = _previousHeight > 200 ? _previousHeight : 700;
-                        WindowState = _previousState;
-                        Topmost = false;
-                    }
-                };
+
                 
                 // Start async data loading (non-blocking)
                 _ = vm.InitializeDataAsync();
@@ -137,12 +123,7 @@ public partial class MainWindow : Window
     }
 
 
-    // Store previous window state for mini player toggle
-    private double _previousWidth = 1200;
-    private double _previousHeight = 700;
-    private WindowState _previousState = WindowState.Normal;
 
-    // Global keyboard shortcuts handler
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         // Get the currently focused element
@@ -216,12 +197,55 @@ public partial class MainWindow : Window
                 }
                 break;
                 
+            case Key.Up:
+                if (!isTextBoxFocused)
+                {
+                    viewModel.Volume = Math.Min(1.0, viewModel.Volume + 0.05);
+                    e.Handled = true;
+                }
+                break;
+
+            case Key.Down:
+                if (!isTextBoxFocused)
+                {
+                    viewModel.Volume = Math.Max(0.0, viewModel.Volume - 0.05);
+                    e.Handled = true;
+                }
+                break;
+
+            case Key.F:
+                if (Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    viewModel.ToggleLibrarySearchCommand.Execute(null);
+                    // Explicitly focus search box if it's becoming visible
+                    // (Note: The command toggles visibility, FocusSearchBox action in VM handles focus if wired up, 
+                    // but here we might need to rely on the VM's property change triggering UI behavior or call Focus explicitly)
+                    // The FocusSearchBox action is wired in MainWindow constructor, so we should check if we need to call it.
+                    // The command in VM toggles the bool.
+                    // Let's call the action directly if needed, or rely on the bound command.
+                    // Actually, let's just execute the command. 
+                    if (viewModel.IsLibrarySearchVisible)
+                    {
+                         // If we just opened it, focus.
+                         viewModel.FocusSearchBox?.Invoke();
+                    }
+                    e.Handled = true;
+                }
+                break;
+                
             case Key.F11:
                 // Full screen toggle
                 viewModel.ToggleFullScreenCommand.Execute(null);
                 e.Handled = true;
                 break;
         }
+    }
+
+    private void SongsDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+    {
+        // Set the row header to the index + 1
+        // This is O(1) and much faster than the previous O(N) converter
+        e.Row.Header = (e.Row.GetIndex() + 1).ToString();
     }
 
     // Double-click on song to play it

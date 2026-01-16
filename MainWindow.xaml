@@ -65,7 +65,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                 CornerRadius="20">
                                 <Grid>
                                     <TextBlock Text="&#xE80F;"
-                                        FontFamily="Segoe MDL2 Assets"
+                                        FontFamily="Segoe Fluent Icons"
                                         FontSize="20"
                                         Foreground="White"
                                         HorizontalAlignment="Center"
@@ -105,13 +105,13 @@ Background="{DynamicResource AppBackgroundBrush}">
                         <!-- Search Icon -->
                         <TextBlock Grid.Column="0"
                             Text="&#xE721;"
-                            FontFamily="Segoe MDL2 Assets"
+                            FontFamily="Segoe Fluent Icons"
                             FontSize="16"
                             Foreground="{DynamicResource SecondaryTextBrush}"
                             VerticalAlignment="Center"
                             Margin="0,0,8,0"/>
                         <!-- Search Input -->
-                        <TextBox Grid.Column="1"
+                        <TextBox x:Name="NavbarSearchBox" Grid.Column="1"
                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                             Background="Transparent"
                             BorderThickness="0"
@@ -155,7 +155,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                     ToolTip="Switch to Mini Player"
                     Height="48"
                     VerticalAlignment="Top">
-                    <TextBlock Text="&#xE740;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    <TextBlock Text="&#xE740;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
                 </Button>
                 <!-- Theme Toggle Button -->
                 <Button Style="{StaticResource IconButtonStyle}"
@@ -166,10 +166,10 @@ Background="{DynamicResource AppBackgroundBrush}">
                     VerticalAlignment="Top">
                     <Grid>
                         <!-- Sun Icon (for switching to Light) - Visible when Dark -->
-                        <TextBlock Text="&#xE706;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"
+                        <TextBlock Text="&#xE706;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"
                             Visibility="{Binding IsDarkTheme, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         <!-- Moon Icon (for switching to Dark) - Visible when Light -->
-                        <TextBlock Text="&#xE708;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"
+                        <TextBlock Text="&#xE708;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"
                             Visibility="{Binding IsDarkTheme, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
                     </Grid>
                 </Button>
@@ -284,42 +284,18 @@ Background="{DynamicResource AppBackgroundBrush}">
                             </MenuItem>
                             <!-- Edit -->
                             <MenuItem Header="Edit">
-                                <MenuItem Header="Select All" Command="{Binding SelectAllCommand}" InputGestureText="Ctrl+A"/>
-                                <MenuItem Header="Deselect All" Command="{Binding DeselectAllCommand}"/>
-                                <Separator Background="#3E3E3E"/>
                                 <MenuItem Header="Find" Command="{Binding FocusSearchCommand}" InputGestureText="Ctrl+F"/>
-                                <Separator Background="#3E3E3E"/>
-                                <MenuItem Header="Preferences" Command="{Binding SettingsCommand}"/>
                             </MenuItem>
                             <!-- View -->
                             <MenuItem Header="View">
-                                <MenuItem Header="Toggle Sidebar" Command="{Binding ToggleSidebarCommand}"/>
-                                <MenuItem Header="Toggle Queue Panel" Command="{Binding ToggleQueueCommand}"/>
+                                <MenuItem Header="Toggle Left Sidebar" Command="{Binding ToggleSidebarCommand}"/>
+                                <MenuItem Header="Toggle Right Sidebar" Command="{Binding ToggleQueueCommand}"/>
                                 <Separator Background="#3E3E3E"/>
                                 <MenuItem Header="Go to Current Song" Command="{Binding ScrollToCurrentCommand}"/>
-                                <Separator Background="#3E3E3E"/>
-                                <MenuItem Header="Mini Player Mode" Command="{Binding ToggleMiniPlayerCommand}"/>
+
                                 <MenuItem Header="Full Screen" Command="{Binding ToggleFullScreenCommand}" InputGestureText="F11"/>
                             </MenuItem>
-                            <!-- Playback -->
-                            <MenuItem Header="Playback">
-                                <MenuItem Header="Play/Pause" Command="{Binding PlayPauseCommand}" InputGestureText="Space"/>
-                                <MenuItem Header="Stop" Command="{Binding StopCommand}"/>
-                                <Separator Background="#3E3E3E"/>
-                                <MenuItem Header="Next Track" Command="{Binding NextCommand}" InputGestureText="Ctrl+?"/>
-                                <MenuItem Header="Previous Track" Command="{Binding PreviousCommand}" InputGestureText="Ctrl+?"/>
-                                <Separator Background="#3E3E3E"/>
-                                <MenuItem Header="Shuffle" Command="{Binding ShuffleCommand}" IsCheckable="True" IsChecked="{Binding IsShuffleEnabled}"/>
-                                <MenuItem Header="Repeat">
-                                    <MenuItem Header="Off" Command="{Binding SetRepeatOffCommand}"/>
-                                    <MenuItem Header="Repeat All" Command="{Binding SetRepeatAllCommand}"/>
-                                    <MenuItem Header="Repeat One" Command="{Binding SetRepeatOneCommand}"/>
-                                </MenuItem>
-                                <Separator Background="#3E3E3E"/>
-                                <MenuItem Header="Volume Up" Command="{Binding VolumeUpCommand}" InputGestureText="?"/>
-                                <MenuItem Header="Volume Down" Command="{Binding VolumeDownCommand}" InputGestureText="?"/>
-                                <MenuItem Header="Mute" Command="{Binding ToggleMuteCommand}" IsCheckable="True" IsChecked="{Binding IsMuted}"/>
-                            </MenuItem>
+                            <!-- Playback Menu Removed -->
                             <!-- Help -->
                             <MenuItem Header="Help">
                                 <MenuItem Header="Keyboard Shortcuts" Command="{Binding KeyboardShortcutsCommand}"/>
@@ -328,7 +304,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             </MenuItem>
                         </ContextMenu>
                     </Button.ContextMenu>
-                    <TextBlock Text="&#xE712;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#B3B3B3"/>
+                    <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="#B3B3B3"/>
                 </Button>
                 <!-- Custom Window Controls (Height 48) -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="48">
@@ -356,12 +332,12 @@ Background="{DynamicResource AppBackgroundBrush}">
         <!-- ============================================ -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="280"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <!-- COLUMN 0: LEFT PANEL (Library) -->
-            <Border Grid.Column="0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Margin="6"
+            <Border Grid.Column="0" Width="268" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Margin="6"
                 Visibility="{Binding IsSidebarVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -372,17 +348,17 @@ Background="{DynamicResource AppBackgroundBrush}">
                     <!-- Library Header -->
                     <Grid Grid.Row="0" Margin="16,20,16,16">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Cursor="Hand">
-                            <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets" FontSize="24" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="&#xE8F1;" FontFamily="Segoe Fluent Icons" FontSize="24" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                             <TextBlock Text="Your Library" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <!-- Add Folder Button -->
                             <Button Style="{StaticResource IconButtonStyle}" ToolTip="Add Music Folder" Command="{Binding AddFolderCommand}" Margin="0,0,4,0">
-                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
                             </Button>
                             <!-- Add MP3 File(s) Button -->
                             <Button Style="{StaticResource IconButtonStyle}" ToolTip="Add MP3 File(s)" Command="{Binding AddFilesCommand}">
-                                <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                <TextBlock Text="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
                             </Button>
                         </StackPanel>
                     </Grid>
@@ -396,7 +372,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <!-- Search Icon -->
-                                <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="8,0"/>
+                                <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="8,0"/>
                                 <!-- Input -->
                                 <TextBox x:Name="LibrarySearchBox"
                                     Grid.Column="1"
@@ -419,16 +395,157 @@ Background="{DynamicResource AppBackgroundBrush}">
                             </Grid>
                         </Border>
                     </Grid>
-                    <!-- List (Liked Songs + Playlists) -->
+                    <!-- List (Favorite Tracks pinned + My Tracks collapsible) -->
                     <ScrollViewer Grid.Row="2" Margin="8,0" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <!-- Pinned 'Liked Songs' Item -->
-                            <!-- Playlists -->
-                            <!-- Playlists -->
+                            <!-- Pinned 'Favorite Tracks' Item (Always Visible) -->
                             <ListBox ItemsSource="{Binding PlaylistsView}"
                                 SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}"
                                 Background="Transparent" BorderThickness="0"
                                 Style="{StaticResource PlaylistListBoxStyle}">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="4"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4">
+                                                        <ContentPresenter/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <!-- Hide non-LikedSongs items in this list -->
+                                            <DataTrigger Binding="{Binding IsLikedSongs}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4" Background="Transparent">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="48"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <!-- Heart Icon -->
+                                            <Border Grid.Column="0" Width="48" Height="48" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="4">
+                                                <TextBlock Text="&#xE00B;" FontFamily="Segoe Fluent Icons" FontSize="20" 
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#87CEEB"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontSize="15" Foreground="{DynamicResource PrimaryTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding SongCountText, StringFormat='{}Playlist • {0}'}" FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            
+                            <!-- My Tracks Header with Toggle -->
+                            <Grid Margin="0,12,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Disc/Vinyl Icon -->
+                                <Border Grid.Column="0" Width="32" Height="32" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="4" Margin="0,0,8,0">
+                                    <TextBlock Text="&#xE93C;" FontFamily="Segoe Fluent Icons" FontSize="16" 
+                                        HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                </Border>
+                                
+                                <!-- "My Tracks" Label -->
+                                <TextBlock Grid.Column="1" Text="My Tracks" FontSize="14" FontWeight="SemiBold" 
+                                    Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center"/>
+                                
+                                <!-- Toggle Button (Chevron) -->
+                                <Button Grid.Column="2" Command="{Binding ToggleMyTracksCommand}" 
+                                    Background="Transparent" BorderThickness="0" Padding="8" Cursor="Hand">
+                                    <TextBlock x:Name="ChevronIcon" Text="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="12" 
+                                        Foreground="{DynamicResource SecondaryTextBrush}" RenderTransformOrigin="0.5,0.5">
+                                        <TextBlock.RenderTransform>
+                                            <RotateTransform Angle="0"/>
+                                        </TextBlock.RenderTransform>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsMyTracksExpanded}" Value="False">
+                                                        <DataTrigger.EnterActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                        To="-90" Duration="0:0:0.2"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.EnterActions>
+                                                        <DataTrigger.ExitActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                        To="0" Duration="0:0:0.2"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.ExitActions>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Button>
+                            </Grid>
+                            
+                            <!-- Collapsible My Tracks List -->
+                            <ListBox ItemsSource="{Binding PlaylistsView}"
+                                SelectedItem="{Binding SelectedPlaylist, Mode=TwoWay}"
+                                Background="Transparent" BorderThickness="0"
+                                Style="{StaticResource PlaylistListBoxStyle}"
+                                Visibility="{Binding IsMyTracksExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="4"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4">
+                                                        <ContentPresenter/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <!-- Hide LikedSongs items in this list (they're pinned above) -->
+                                            <DataTrigger Binding="{Binding IsLikedSongs}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="0,4" Background="Transparent"
@@ -443,7 +560,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                                     CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                     Foreground="White">
                                                                     <MenuItem.Icon>
-                                                                        <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#B3B3B3"/>
+                                                                        <TextBlock Text="&#xE70F;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="#B3B3B3"/>
                                                                     </MenuItem.Icon>
                                                                 </MenuItem>
                                                                 <Separator Background="#3E3E3E"/>
@@ -452,17 +569,12 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                                     CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                     Foreground="#E91E63">
                                                                     <MenuItem.Icon>
-                                                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#E91E63"/>
+                                                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="#E91E63"/>
                                                                     </MenuItem.Icon>
                                                                 </MenuItem>
                                                             </ContextMenu>
                                                         </Setter.Value>
                                                     </Setter>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsLikedSongs}" Value="True">
-                                                            <Setter Property="ContextMenu" Value="{x:Null}"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
                                                 </Style>
                                             </Grid.Style>
                                             <Grid.ColumnDefinitions>
@@ -470,28 +582,17 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
                                             <Border Grid.Column="0" Width="48" Height="48" Background="#282828" CornerRadius="4">
-                                                <Image Source="{Binding CoverImage}" Stretch="UniformToFill"/> <!-- Assuming prop exists, else fallback -->
+                                                <Image Source="{Binding CoverImage}" Stretch="UniformToFill"/>
                                             </Border>
                                             <!-- Fallback Icon if no image -->
                                             <Border Grid.Column="0" Width="48" Height="48" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="4" Visibility="{Binding HasCoverImage, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                                <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Setter Property="Text" Value="&#xE8B7;"/> <!-- Default: Folder -->
-                                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsLikedSongs}" Value="True">
-                                                                    <Setter Property="Text" Value="&#xE00B;"/> <!-- Heart Icon -->
-                                                                    <Setter Property="Foreground" Value="#87CEEB"/> <!-- Spotify Green or Custom Accent -->
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
+                                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe Fluent Icons" FontSize="20" 
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#B3B3B3"
+                                                    TextOptions.TextRenderingMode="Aliased"/>
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Name}" FontSize="15" Foreground="{DynamicResource PrimaryTextBrush}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding Songs.Count, StringFormat='{}Playlist • {0} Songs'}" FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0"/>
+                                                <TextBlock Text="{Binding SongCountText, StringFormat='{}Playlist • {0}'}" FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0"/>
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
@@ -530,6 +631,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             VirtualizingPanel.CacheLength="5,5"
                             VirtualizingPanel.CacheLengthUnit="Item"
                             VirtualizingPanel.VirtualizationMode="Recycling"
+                            LoadingRow="SongsDataGrid_LoadingRow"
                             AlternationCount="9999">
                             <DataGrid.Columns>
                                 <!-- # Column -->
@@ -547,10 +649,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                     Foreground="{DynamicResource SecondaryTextBrush}"
                                                     HorizontalAlignment="Center">
                                                     <TextBlock.Text>
-                                                        <MultiBinding Converter="{StaticResource RowNumberConverter}">
-                                                            <Binding/>
-                                                            <Binding Path="DataContext.SongsView" RelativeSource="{RelativeSource AncestorType=DataGrid}"/>
-                                                        </MultiBinding>
+                                                        <Binding Path="Header" RelativeSource="{RelativeSource AncestorType=DataGridRow}"/>
                                                     </TextBlock.Text>
                                                 </TextBlock>
                                                 <!-- Play Icon Button (Hidden by default, shown on hover) -->
@@ -569,7 +668,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         </ControlTemplate>
                                                     </Button.Template>
                                                     <TextBlock Text="&#xE768;"
-                                                        FontFamily="Segoe MDL2 Assets"
+                                                        FontFamily="Segoe Fluent Icons"
                                                         FontSize="12"
                                                         Foreground="{DynamicResource PrimaryTextBrush}"/>
                                                 </Button>
@@ -691,7 +790,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         <Grid>
                                                             <TextBlock x:Name="HeartIcon"
                                                                 Text="&#xE006;"
-                                                                FontFamily="Segoe MDL2 Assets"
+                                                                FontFamily="Segoe Fluent Icons"
                                                                 FontSize="14"
                                                                 Foreground="#B3B3B3"
                                                                 Visibility="Hidden"/> <!-- Hidden by default, shown on Hover/Liked -->
@@ -770,7 +869,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         Command="{Binding PlacementTarget.Tag.ToggleLikeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                         CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                                         <MenuItem.Icon>
-                                                            <TextBlock Text="&#xEB51;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#87CEEB"/>
+                                                            <TextBlock Text="&#xEB51;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="#87CEEB"/>
                                                         </MenuItem.Icon>
                                                     </MenuItem>
                                                     <!-- Add to Queue -->
@@ -778,7 +877,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         Command="{Binding PlacementTarget.Tag.AddToQueueCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                         CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                                         <MenuItem.Icon>
-                                                            <TextBlock Text="&#xE8EE;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#B3B3B3"/>
+                                                            <TextBlock Text="&#xE8EE;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="#B3B3B3"/>
                                                         </MenuItem.Icon>
                                                     </MenuItem>
                                                     <!-- Remove from Queue -->
@@ -787,7 +886,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                         Foreground="#FFCC00">
                                                         <MenuItem.Icon>
-                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#FFCC00"/>
+                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="#FFCC00"/>
                                                         </MenuItem.Icon>
                                                         <MenuItem.Style>
                                                             <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
@@ -813,7 +912,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                         Foreground="#E91E63">
                                                         <MenuItem.Icon>
-                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#E91E63"/>
+                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="#E91E63"/>
                                                         </MenuItem.Icon>
                                                     </MenuItem>
                                                 </ContextMenu>
@@ -826,7 +925,8 @@ Background="{DynamicResource AppBackgroundBrush}">
                     </Grid>
                 </Border>
                 <!-- COLUMN 2: RIGHT PANEL (Now Playing + Credits) -->
-                <Border Grid.Column="2" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Margin="6">
+                <Border Grid.Column="2" Width="308" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Margin="6"
+                    Visibility="{Binding IsQueueVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
                         <StackPanel Margin="16">
                             <!-- Header -->
@@ -841,7 +941,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                     <!-- Fallback -->
                                     <Grid Visibility="{Binding CurrentSong.HasCoverArt, Converter={StaticResource InverseBoolToVisibilityConverter}, FallbackValue=Visible}">
                                         <Border Background="#282828" CornerRadius="8" Height="200" Width="200">
-                                            <TextBlock Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" FontSize="60" Foreground="#535353" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <TextBlock Text="&#xE8D6;" FontFamily="Segoe Fluent Icons" FontSize="60" Foreground="#535353" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                     </Grid>
                                 </Grid>
@@ -866,7 +966,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                             <Grid Background="Transparent">
                                                 <TextBlock x:Name="HeartIcon"
                                                     Text="&#xE006;"
-                                                    FontFamily="Segoe MDL2 Assets"
+                                                    FontFamily="Segoe Fluent Icons"
                                                     FontSize="18"
                                                     Foreground="#B3B3B3"/>
                                             </Grid>
@@ -912,7 +1012,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                     </Grid>
                                 </StackPanel>
                             </Border>
-                            <!-- Queue Card -->
+
                             <Border Background="{DynamicResource ControlHoverBrush}" CornerRadius="8" Padding="16">
                                 <StackPanel>
                                     <Grid Margin="0,0,0,12">
@@ -921,7 +1021,8 @@ Background="{DynamicResource AppBackgroundBrush}">
                                             Command="{Binding ToggleQueuePopupCommand}"
                                             Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" FontWeight="Bold"
                                             HorizontalAlignment="Right" VerticalAlignment="Center"
-                                            Cursor="Hand" Background="Transparent" BorderThickness="0">
+                                            Cursor="Hand" Background="Transparent" BorderThickness="0"
+                                            Visibility="Collapsed">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <ContentPresenter/>
@@ -974,11 +1075,22 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <!-- Cover -->
-                                                    <Border CornerRadius="4" Width="40" Height="40" Margin="0,0,12,0">
-                                                        <Border.Background>
-                                                            <ImageBrush ImageSource="{Binding CoverArt, FallbackValue='/Resources/unknown_album.png'}" Stretch="UniformToFill"/>
-                                                        </Border.Background>
+                                                    <!-- Cover with Music Note Fallback -->
+                                                    <Border CornerRadius="4" Width="40" Height="40" Margin="0,0,12,0" Background="{DynamicResource ControlHoverBrush}">
+                                                        <Grid>
+                                                            <!-- Fallback Music Note Icon (shows when no cover art) -->
+                                                            <TextBlock Text="&#xE8D6;" 
+                                                                       FontFamily="Segoe Fluent Icons" 
+                                                                       FontSize="18" 
+                                                                       Foreground="#808080" 
+                                                                       HorizontalAlignment="Center" 
+                                                                       VerticalAlignment="Center"
+                                                                       Visibility="{Binding HasCoverArt, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                                            <!-- Cover Art Image (shows when available) -->
+                                                            <Image Source="{Binding CoverArt}" 
+                                                                   Stretch="UniformToFill"
+                                                                   Visibility="{Binding HasCoverArt, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                        </Grid>
                                                     </Border>
                                                     <!-- Text -->
                                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -1022,7 +1134,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="56" Height="56" CornerRadius="4" Background="{DynamicResource CardBackgroundBrush}" Margin="0,0,14,0">
                             <Grid>
-                                <TextBlock Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="&#xE8D6;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <Image Source="{Binding CurrentSong.CoverArt}" Stretch="UniformToFill" Visibility="{Binding CurrentSong.HasCoverArt, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Image.Clip>
                                         <RectangleGeometry Rect="0,0,56,56" RadiusX="4" RadiusY="4"/>
@@ -1051,11 +1163,11 @@ Background="{DynamicResource AppBackgroundBrush}">
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <TextBlock Text="&#xE8B1;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                                <TextBlock Text="&#xE8B1;" FontFamily="Segoe Fluent Icons" FontSize="16"/>
                             </Button>
                             <!-- Previous -->
                             <Button Style="{StaticResource IconButtonStyle}" Margin="16,0" Command="{Binding PreviousCommand}" ToolTip="Previous">
-                                <TextBlock Text="&#xE892;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                <TextBlock Text="&#xE892;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}"/>
                             </Button>
                             <!-- Play/Pause (Modern Circle) -->
                             <Button Width="48" Height="48" Margin="16,0" Command="{Binding PlayPauseCommand}" ToolTip="Play/Pause">
@@ -1064,10 +1176,10 @@ Background="{DynamicResource AppBackgroundBrush}">
                                         <Grid>
                                             <Border x:Name="bdr" Background="#87CEEB" CornerRadius="24">
                                                 <Grid>
-                                                    <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="White"
+                                                    <TextBlock Text="&#xE768;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="White"
                                                         HorizontalAlignment="Center" VerticalAlignment="Center"
                                                         Visibility="{Binding IsPlaying, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                                                    <TextBlock Text="&#xE769;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="White"
+                                                    <TextBlock Text="&#xE769;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="White"
                                                         HorizontalAlignment="Center" VerticalAlignment="Center"
                                                         Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                                 </Grid>
@@ -1104,7 +1216,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             </Button>
                             <!-- Next -->
                             <Button Style="{StaticResource IconButtonStyle}" Margin="16,0" Command="{Binding NextCommand}" ToolTip="Next">
-                                <TextBlock Text="&#xE893;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                <TextBlock Text="&#xE893;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}"/>
                             </Button>
                             <!-- Repeat -->
                             <Button Command="{Binding RepeatCommand}" ToolTip="Enable Repeat">
@@ -1123,7 +1235,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="16">
+                                <TextBlock FontFamily="Segoe Fluent Icons" FontSize="16">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="&#xE8EE;"/>
@@ -1163,14 +1275,14 @@ Background="{DynamicResource AppBackgroundBrush}">
                     <!-- Right: Volume/Extra -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button Command="{Binding ToggleQueuePopupCommand}" Style="{StaticResource IconButtonStyle}" Margin="8,0" ToolTip="Queue">
-                            <TextBlock Text="&#xE90B;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            <TextBlock Text="&#xE90B;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}"/>
                         </Button>
                         <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
                             <Button Command="{Binding ToggleMuteCommand}"
                                 Style="{StaticResource IconButtonStyle}"
                                 Margin="0,0,8,0"
                                 VerticalAlignment="Center">
-                                <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}">
+                                <TextBlock FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="&#xE995;"/> <!-- High Volume Default -->
@@ -1323,7 +1435,245 @@ Background="{DynamicResource AppBackgroundBrush}">
                     </Grid>
                 </Border>
             </Grid>
-            <!-- Queue Popup Overlay -->
+            <!-- Keyboard Shortcuts Popup Overlay -->
+            <Grid Visibility="{Binding IsShortcutsPopupOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                Background="#99000000"
+                Grid.RowSpan="3"
+                Panel.ZIndex="105">
+                <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="12"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="400"
+                    MaxHeight="600">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" Color="Black" Opacity="0.6" ShadowDepth="10"/>
+                    </Border.Effect>
+                    <Grid Margin="32">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <!-- Header -->
+                        <Grid Margin="0,0,0,24">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE765;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Keyboard Shortcuts" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding CloseShortcutsPopupCommand}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                            </Button>
+                        </Grid>
+                        <!-- Content (Shortcuts List) -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <!-- Space -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Ctrl + Right -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Ctrl + Left -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Right -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Left -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Up -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Down -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- M -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- F11 -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Ctrl + F -->
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <Grid.Resources>
+                                <Style TargetType="TextBlock" x:Key="KeyStyle">
+                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="14"/>
+                                    <Setter Property="Margin" Value="0,8"/>
+                                    <Setter Property="Background" Value="#3E3E3E"/>
+                                    <Setter Property="Padding" Value="8,4"/>
+                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                    <Setter Property="MinWidth" Value="80"/>
+                                    <Setter Property="TextAlignment" Value="Center"/>
+                                </Style>
+                                <Style TargetType="Border" x:Key="KeyBorderStyle">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                    <Setter Property="Background" Value="#3E3E3E"/>
+                                    <Setter Property="Margin" Value="0,6"/>
+                                    <Setter Property="Padding" Value="12,6"/>
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                                <Style TargetType="TextBlock" x:Key="ActionStyle">
+                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                    <Setter Property="FontSize" Value="14"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Margin" Value="24,0,0,0"/>
+                                </Style>
+                            </Grid.Resources>
+
+                            <!-- Space -->
+                            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="Space" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="Play / Pause" Style="{StaticResource ActionStyle}"/>
+
+                            <!-- Ctrl + Right -->
+                            <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="Ctrl + →" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Next Track" Style="{StaticResource ActionStyle}"/>
+
+                            <!-- Ctrl + Left -->
+                            <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="Ctrl + ←" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="Previous Track" Style="{StaticResource ActionStyle}"/>
+
+                            <!-- Right -->
+                            <Border Grid.Row="3" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="→" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="Forward 5s" Style="{StaticResource ActionStyle}"/>
+
+                            <!-- Left -->
+                            <Border Grid.Row="4" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="←" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="Rewind 5s" Style="{StaticResource ActionStyle}"/>
+
+                            <!-- Up -->
+                            <Border Grid.Row="5" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="↑" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="5" Grid.Column="1" Text="Volume Up" Style="{StaticResource ActionStyle}"/>
+                            
+                            <!-- Down -->
+                            <Border Grid.Row="6" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="↓" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="6" Grid.Column="1" Text="Volume Down" Style="{StaticResource ActionStyle}"/>
+
+                            <!-- M -->
+                            <Border Grid.Row="7" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="M" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="7" Grid.Column="1" Text="Mute Toggle" Style="{StaticResource ActionStyle}"/>
+
+                            <!-- F11 -->
+                            <Border Grid.Row="8" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="F11" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="8" Grid.Column="1" Text="Full Screen" Style="{StaticResource ActionStyle}"/>
+
+                            <!-- Ctrl + F -->
+                            <Border Grid.Row="9" Grid.Column="0" Style="{StaticResource KeyBorderStyle}">
+                                <TextBlock Text="Ctrl + F" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock Grid.Row="9" Grid.Column="1" Text="Find Song" Style="{StaticResource ActionStyle}"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+            <!-- About Popup Overlay -->
+            <Grid Visibility="{Binding IsAboutPopupOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                Background="#99000000"
+                Grid.RowSpan="3"
+                Panel.ZIndex="105">
+                <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="12"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="400">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" Color="Black" Opacity="0.6" ShadowDepth="10"/>
+                    </Border.Effect>
+                    <Grid Margin="32">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Header / Close Button -->
+                        <Grid Margin="0,0,0,8">
+                            <Button Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding CloseAboutPopupCommand}"
+                                HorizontalAlignment="Right" VerticalAlignment="Top">
+                                <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Logo & Title -->
+                        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,0,0,24">
+                            <!-- App Icon -->
+                            <Image Source="/Assets/ocean-wave-blue.png" Width="64" Height="64" Margin="0,0,0,16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            
+                            <TextBlock Text="Crescendo" 
+                                Foreground="{DynamicResource PrimaryTextBrush}" 
+                                FontSize="28" 
+                                FontWeight="Bold" 
+                                HorizontalAlignment="Center"/>
+                                
+                            <TextBlock Text="Version v1.0.0-beta.1" 
+                                Foreground="{DynamicResource SecondaryTextBrush}" 
+                                FontSize="14" 
+                                HorizontalAlignment="Center"
+                                Margin="0,4,0,0"/>
+
+                            <TextBlock Text="Build 2026.01.15" 
+                                Foreground="{DynamicResource SecondaryTextBrush}" 
+                                FontSize="12" 
+                                Opacity="0.7"
+                                HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Description -->
+                        <TextBlock Grid.Row="2" 
+                            Text="A modern music player built with WPF, focusing on elegance and performance." 
+                            Foreground="{DynamicResource PrimaryTextBrush}" 
+                            FontSize="14" 
+                            TextWrapping="Wrap" 
+                            TextAlignment="Center"
+                            Margin="0,0,0,24"/>
+
+                        <!-- Credits -->
+                        <StackPanel Grid.Row="3" Margin="0,0,0,24">
+                            <TextBlock Text="Credits" 
+                                Foreground="{DynamicResource PrimaryTextBrush}" 
+                                FontWeight="SemiBold" 
+                                HorizontalAlignment="Center"
+                                Margin="0,0,0,8"/>
+                                
+                            <TextBlock Text="Arisa Akiyama" 
+                                Foreground="{DynamicResource AccentBrush}" 
+                                FontSize="14" 
+                                HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Copyright -->
+                        <TextBlock Grid.Row="4" 
+                            Text="© 2026 Crescendo. All rights reserved." 
+                            Foreground="{DynamicResource SecondaryTextBrush}" 
+                            FontSize="12" 
+                            HorizontalAlignment="Center"
+                            Opacity="0.5"/>
+                    </Grid>
+                </Border>
+            </Grid>
             <Grid Visibility="{Binding IsQueuePopupOpen, Converter={StaticResource BoolToVisibilityConverter}}"
                 Background="#99000000"
                 Grid.RowSpan="3"
@@ -1349,7 +1699,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             <Button Style="{StaticResource IconButtonStyle}"
                                 Command="{Binding CloseQueuePopupCommand}"
                                 HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
                             </Button>
                         </Grid>
                         <!-- Content (List) -->
@@ -1408,11 +1758,22 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <!-- Cover -->
-                                            <Border CornerRadius="4" Width="48" Height="48" Margin="0,0,16,0">
-                                                <Border.Background>
-                                                    <ImageBrush ImageSource="{Binding CoverArt, FallbackValue='/Resources/unknown_album.png'}" Stretch="UniformToFill"/>
-                                                </Border.Background>
+                                            <!-- Cover with Music Note Fallback -->
+                                            <Border CornerRadius="4" Width="48" Height="48" Margin="0,0,16,0" Background="{DynamicResource ControlHoverBrush}">
+                                                <Grid>
+                                                    <!-- Fallback Music Note Icon (shows when no cover art) -->
+                                                    <TextBlock Text="&#xE8D6;" 
+                                                               FontFamily="Segoe Fluent Icons" 
+                                                               FontSize="22" 
+                                                               Foreground="#808080" 
+                                                               HorizontalAlignment="Center" 
+                                                               VerticalAlignment="Center"
+                                                               Visibility="{Binding HasCoverArt, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                                    <!-- Cover Art Image (shows when available) -->
+                                                    <Image Source="{Binding CoverArt}" 
+                                                           Stretch="UniformToFill"
+                                                           Visibility="{Binding HasCoverArt, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                </Grid>
                                             </Border>
                                             <!-- Text -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -1435,7 +1796,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Button.Style>
-                                                <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#B3B3B3"/>
+                                                <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="#B3B3B3"/>
                                             </Button>
                                         </Grid>
                                     </DataTemplate>

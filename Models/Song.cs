@@ -13,7 +13,20 @@ namespace DesktopMusicPlayer.Models
         public string Title { get; set; } = string.Empty;
         public string Artist { get; set; } = string.Empty;
         public string Album { get; set; } = string.Empty;
-        public TimeSpan Duration { get; set; }
+        private TimeSpan _duration;
+        public TimeSpan Duration
+        {
+            get => _duration;
+            set
+            {
+                if (_duration != value)
+                {
+                    _duration = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(DurationFormatted));
+                }
+            }
+        }
         public string FilePath { get; set; } = string.Empty;
         
         // Cover Art Lazy Loading

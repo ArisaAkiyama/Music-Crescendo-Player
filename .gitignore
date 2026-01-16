@@ -2,7 +2,9 @@
 [Bb]in/
 [Oo]bj/
 dist/
+# Inno Setup
 InnoOutput/
+setup.iss
 CustomInstallerOutput/
 UninstallerOutput/
 
@@ -39,3 +41,5 @@ Desktop.ini
 !Assets/*.png
 !Assets/*.ico
 !Resources/*.xaml
+
+Music/

@@ -46,7 +46,7 @@
                     <Grid Grid.Column="0" Width="48" Height="48">
                         <!-- Fallback Background -->
                         <Border Background="{DynamicResource ControlHoverBrush}" CornerRadius="6">
-                            <TextBlock Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" 
+                            <TextBlock Text="&#xE8D6;" FontFamily="Segoe Fluent Icons" 
                                        FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}" 
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -84,7 +84,7 @@
                         <!-- Shuffle Button -->
                         <Button Style="{StaticResource IconButtonStyle}" Command="{Binding ShuffleCommand}" Margin="0,0,16,0"
                                 ToolTip="Shuffle">
-                            <TextBlock x:Name="ShuffleIcon" Text="&#xE8B1;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                            <TextBlock x:Name="ShuffleIcon" Text="&#xE8B1;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                             <Button.Resources>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/> <!-- Default Color -->
@@ -103,7 +103,7 @@
                         <!-- Previous -->
                         <Button Style="{StaticResource IconButtonStyle}" Command="{Binding PreviousCommand}" Margin="8,0"
                                 ToolTip="Previous">
-                            <TextBlock Text="&#xE892;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                            <TextBlock Text="&#xE892;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
                         </Button>
 
                         <!-- Play/Pause -->
@@ -113,10 +113,10 @@
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="bdr" Background="#87CEEB" CornerRadius="18">
                                         <Grid>
-                                            <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="White"
+                                            <TextBlock Text="&#xE768;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                                        Visibility="{Binding IsPlaying, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                                            <TextBlock Text="&#xE769;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="White"
+                                            <TextBlock Text="&#xE769;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                                        Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                         </Grid>
@@ -133,7 +133,7 @@
                         <!-- Next -->
                         <Button Style="{StaticResource IconButtonStyle}" Command="{Binding NextCommand}" Margin="8,0"
                                 ToolTip="Next">
-                            <TextBlock Text="&#xE893;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                            <TextBlock Text="&#xE893;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
                         </Button>
                         
                         <!-- Repeat Button -->
@@ -157,7 +157,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Resources>
-                            <TextBlock Style="{StaticResource RepeatIconStyle}" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                            <TextBlock Style="{StaticResource RepeatIconStyle}" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                         </Button>
                     </StackPanel>
 
@@ -200,7 +200,7 @@
                     Click="ExpandButton_Click"
                     ToolTip="Expand to Main Player"
                     Margin="0,8,8,0">
-                <TextBlock Text="&#xE740;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                <TextBlock Text="&#xE740;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
             </Button>
         </Grid>
 

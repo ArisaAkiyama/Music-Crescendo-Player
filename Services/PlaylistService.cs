@@ -88,13 +88,13 @@ namespace DesktopMusicPlayer.Services
                 System.Diagnostics.Debug.WriteLine($"Error loading playlists: {ex.Message}");
             }
 
-            // Ensure "Liked Songs" always exists as first playlist
+            // Ensure "Favorite Tracks" always exists as first playlist
             if (!playlists.Any(p => p.IsLikedSongs))
             {
                 playlists.Insert(0, new Playlist
                 {
                     Id = 1,
-                    Name = "Liked Songs",
+                    Name = "Favorite Tracks",
                     IconGlyph = "\uEB51", // Heart icon
                     IsLikedSongs = true
                 });

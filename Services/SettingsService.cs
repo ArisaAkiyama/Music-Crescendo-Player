@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace DesktopMusicPlayer.Services
 {
@@ -9,6 +10,7 @@ namespace DesktopMusicPlayer.Services
     public static class SettingsService
     {
         private static readonly string SettingsPath;
+        private static readonly Dictionary<string, string> _settings = new();
 
         static SettingsService()
         {
@@ -35,40 +37,44 @@ namespace DesktopMusicPlayer.Services
                 string appDir = Path.Combine(folderPath, "CrescendoMusicPlayer");
                 if (!Directory.Exists(appDir)) Directory.CreateDirectory(appDir);
                 SettingsPath = Path.Combine(appDir, "settings.txt");
+                
+                LoadSettings();
             }
             catch
             {
-                SettingsPath = "settings.txt"; // Fallback to current directory simple file
+                SettingsPath = "settings.txt"; // Fallback
             }
         }
 
-        /// <summary>
-        /// Get the last used music folder path
-        /// </summary>
-        public static string? GetLastMusicFolder()
+        private static void LoadSettings()
         {
             try
             {
                 if (File.Exists(SettingsPath))
                 {
-                    var content = File.ReadAllText(SettingsPath);
-                    if (Directory.Exists(content))
+                    var lines = File.ReadAllLines(SettingsPath);
+                    foreach (var line in lines)
                     {
-                        return content;
+                        var parts = line.Split('=', 2);
+                        if (parts.Length == 2)
+                        {
+                            _settings[parts[0].Trim()] = parts[1].Trim();
+                        }
+                        else if (!string.IsNullOrWhiteSpace(line) && !_settings.ContainsKey("MusicFolder"))
+                        {
+                            // Backwards compatibility: raw path implies MusicFolder
+                            _settings["MusicFolder"] = line.Trim();
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error reading settings: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
             }
-            return null;
         }
 
-        /// <summary>
-        /// Save the music folder path
-        /// </summary>
-        public static void SaveMusicFolder(string folderPath)
+        private static void SaveSettings()
         {
             try
             {
@@ -77,12 +83,45 @@ namespace DesktopMusicPlayer.Services
                 {
                     Directory.CreateDirectory(directory);
                 }
-                File.WriteAllText(SettingsPath, folderPath);
+                
+                var lines = new List<string>();
+                foreach (var kvp in _settings)
+                {
+                    lines.Add($"{kvp.Key}={kvp.Value}");
+                }
+                
+                File.WriteAllLines(SettingsPath, lines);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error saving settings: {ex.Message}");
             }
+        }
+
+        public static string? GetLastMusicFolder()
+        {
+            return _settings.TryGetValue("MusicFolder", out var val) ? val : null;
+        }
+
+        public static void SaveMusicFolder(string folderPath)
+        {
+            _settings["MusicFolder"] = folderPath;
+            SaveSettings();
+        }
+
+        public static double GetVolume()
+        {
+            if (_settings.TryGetValue("Volume", out var val) && double.TryParse(val, out double volume))
+            {
+                return Math.Clamp(volume, 0.0, 1.0);
+            }
+            return 0.5; // Default volume 50%
+        }
+
+        public static void SaveVolume(double volume)
+        {
+            _settings["Volume"] = volume.ToString("F2");
+            SaveSettings();
         }
     }
 }

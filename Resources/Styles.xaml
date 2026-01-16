@@ -42,7 +42,7 @@
         <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+        <Setter Property="FontFamily" Value="Segoe Fluent Icons"/>
         <Setter Property="FontSize" Value="10"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -73,7 +73,7 @@
         <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+        <Setter Property="FontFamily" Value="Segoe Fluent Icons"/>
         <Setter Property="FontSize" Value="10"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -294,6 +294,7 @@
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Setter Property="Padding" Value="4"/>
                                 <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListBoxItem">
@@ -363,7 +364,7 @@
                                                                 CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                 Foreground="White">
                                                                 <MenuItem.Icon>
-                                                                    <TextBlock Text="&#xEB51;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#87CEEB"/>
+                                                                    <TextBlock Text="&#xEB51;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="#87CEEB"/>
                                                                 </MenuItem.Icon>
                                                             </MenuItem>
                                                             <MenuItem Header="Add to Queue"
@@ -371,7 +372,7 @@
                                                                 CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                 Foreground="White">
                                                                 <MenuItem.Icon>
-                                                                    <TextBlock Text="&#xE90B;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                                                    <TextBlock Text="&#xE90B;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}"/>
                                                                 </MenuItem.Icon>
                                                             </MenuItem>
                                                             <Separator Background="{DynamicResource SeparatorBrush}"/>
@@ -380,7 +381,7 @@
                                                                 CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                 Foreground="#FF6B6B">
                                                                 <MenuItem.Icon>
-                                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#FF6B6B"/>
+                                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="#FF6B6B"/>
                                                                 </MenuItem.Icon>
                                                             </MenuItem>
                                                         </ContextMenu>
