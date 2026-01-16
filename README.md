@@ -1,18 +1,18 @@
-# Music Crescendo Player 🎵
+# Music Crescendo Player
 
 A modern, elegant, and lightweight desktop music player built for Windows. **Crescendo** combines a premium visual aesthetic with powerful library management, delivering a seamless listening experience.
 
 ![Crescendo Main View](Assets/Screenshot%202026-01-15%20221726.png)
 *Experience your music in a beautifully crafted dark interface.*
 
-## 📸 Gallery
+## Gallery
 
 <p float="left" align="center">
   <img src="Assets/Screenshot%202026-01-15%20221814.png" width="45%" alt="Playlist View" />
   <img src="Assets/Screenshot%202026-01-15%20221909.png" width="45%" alt="Mini Player & Settings" /> 
 </p>
 
-## ✨ Features
+## Features
 
 - **Modern UI/UX**: Designed with a sleek, dark-themed interface inspired by modern streaming platforms.
 - **Smart Library Management**: Automatically scans and organizes your local music collection by Artist and Album.
@@ -24,7 +24,7 @@ A modern, elegant, and lightweight desktop music player built for Windows. **Cre
 - **Search**: Fast, real-time search across your entire library.
 - **Drag & Drop**: Simply drag folders or files into the app to import music instantly.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: .NET 8 (WPF)
 - **Language**: C#
@@ -33,13 +33,13 @@ A modern, elegant, and lightweight desktop music player built for Windows. **Cre
 - **Icons**: Segoe MDL2 Assets
 - **Database**: SQLite (for playlists and history)
 
-## 📦 Installation
+## Installation
 
 1. Go to the [Releases](https://github.com/ArisaAkiyama/Music-Crescendo-Player/releases) page.
 2. Download the latest `Crescendo_Setup_v19.exe` (or latest Beta).
 3. Run the installer and follow the prompts.
 
-## 🚀 Building from Source
+## Building from Source
 
 Requirements:
 - Visual Studio 2022
@@ -53,13 +53,13 @@ Requirements:
 3. Restore NuGet packages.
 4. Build and Run (`Ctrl+F5`).
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Feel free to submit a Pull Request or open an Issue for bugs/feature requests.
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-*Built with ❤️ for music lovers.*
+*Built with love for music lovers.*
