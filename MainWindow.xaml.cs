@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using DesktopMusicPlayer.Services;
 using DesktopMusicPlayer.ViewModels;
 
@@ -339,23 +340,60 @@ public partial class MainWindow : Window
             }
         }
 
-    // Click-to-seek on slider track
+    // Click-to-seek on slider track - Simple & Reliable Implementation
     private void Slider_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (DataContext is MainViewModel viewModel)
+        if (DataContext is MainViewModel viewModel && sender is Slider slider)
         {
-            // Temporarily set IsDragging to prevent timer from overwriting
+            // Get click position relative to the slider
+            Point clickPoint = e.GetPosition(slider);
+            double sliderWidth = slider.ActualWidth;
+            
+            // Validate slider dimensions
+            if (sliderWidth <= 0 || slider.Maximum <= slider.Minimum)
+                return;
+            
+            // Calculate the ratio (0.0 to 1.0) of click position
+            double ratio = clickPoint.X / sliderWidth;
+            ratio = Math.Max(0, Math.Min(1, ratio)); // Clamp to [0, 1]
+            
+            // Calculate the target value
+            double targetValue = slider.Minimum + (ratio * (slider.Maximum - slider.Minimum));
+            
+            // Set IsDragging to prevent timer overwrite during seek
             viewModel.IsDragging = true;
+            
+            // Update CurrentProgress to the clicked position
+            viewModel.CurrentProgress = targetValue;
+            
+            // Also update the slider's value directly for immediate visual feedback
+            slider.Value = targetValue;
         }
     }
     
     private void Slider_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (DataContext is MainViewModel viewModel && sender is Slider slider)
+        if (DataContext is MainViewModel viewModel)
         {
-            // Seek to the clicked position
+            // Execute the seek to the current progress position
             viewModel.SeekEndCommand.Execute(null);
         }
+    }
+    
+    // Helper: Find a visual child of a specific type
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T result)
+                return result;
+            
+            var descendant = FindVisualChild<T>(child);
+            if (descendant != null)
+                return descendant;
+        }
+        return null;
     }
 
     // Drag & Drop handlers for MP3 files

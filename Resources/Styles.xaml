@@ -466,7 +466,7 @@
                         <!-- ===================================== -->
 
                         <Style TargetType="ContextMenu">
-                            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+                            <Setter Property="Background" Value="#1A1A1A"/>
                             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
                             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
                             <Setter Property="BorderThickness" Value="1"/>

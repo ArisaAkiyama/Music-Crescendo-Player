@@ -8,4 +8,5 @@
     <SolidColorBrush x:Key="ControlHoverBrush" Color="#333333"/>
     <SolidColorBrush x:Key="BorderBrush" Color="#333333"/>
     <SolidColorBrush x:Key="SeparatorBrush" Color="#3E3E3E"/>
+    <SolidColorBrush x:Key="TopBarBrush" Color="#FFFFFF"/>
 </ResourceDictionary>

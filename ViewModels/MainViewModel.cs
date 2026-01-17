@@ -445,12 +445,7 @@ namespace DesktopMusicPlayer.ViewModels
             set => SetProperty(ref _isMyTracksExpanded, value);
         }
 
-        private bool _isDarkTheme = true;
-        public bool IsDarkTheme
-        {
-            get => _isDarkTheme;
-            set => SetProperty(ref _isDarkTheme, value);
-        }
+
 
 
 
@@ -650,6 +645,9 @@ namespace DesktopMusicPlayer.ViewModels
 
             // Initialize collection view for filtering (empty at this point)
             InitializeCollectionView();
+
+            // Apply default theme (Gradient) on startup
+            ApplyThemeChange();
 
             // Note: Data loading is deferred to InitializeDataAsync() 
             // which should be called from MainWindow.Loaded event
@@ -1305,7 +1303,9 @@ namespace DesktopMusicPlayer.ViewModels
             // Apply the new name
             SelectedPlaylist.Name = RenameText.Trim();
             ContentTitle = SelectedPlaylist.Name;
-
+            
+            // Save to database to persist the rename
+            _playlistRepository.UpdatePlaylist(SelectedPlaylist);
             
             // Close popup
             IsRenamePopupOpen = false;
@@ -2102,55 +2102,114 @@ namespace DesktopMusicPlayer.ViewModels
         }
 
 
+        public enum ThemeType
+        {
+            Dark,
+            Gradient,
+            Light
+        }
+
+        private ThemeType _currentTheme = ThemeType.Gradient;
+        private bool _isThemeChanging = false;
+        public ThemeType CurrentTheme
+        {
+            get => _currentTheme;
+            set => SetProperty(ref _currentTheme, value);
+        }
+
+        // Helper boolean for UI binding
+        public bool IsDarkTheme => CurrentTheme != ThemeType.Light;
+
+
+        // ...
+
         private async void ToggleTheme()
         {
-            var window = Application.Current.MainWindow;
-            if (window == null)
+            if (_isThemeChanging) return;
+            _isThemeChanging = true;
+
+            try
             {
-                // Fallback: just change theme without animation
+                var window = Application.Current.MainWindow;
+                if (window == null)
+                {
+                    ApplyThemeChange();
+                    return;
+                }
+
+                // Smooth opacity transition to prevent visual shock
+                const double targetOpacity = 0.5;
+                const int animationDurationMs = 150; // Slightly slower for smoother feel
+                const int steps = 10;
+                double originalOpacity = window.Opacity;
+                double stepSize = (originalOpacity - targetOpacity) / steps;
+                int stepDelay = animationDurationMs / steps;
+
+                // Fade out
+                for (int i = 0; i < steps; i++)
+                {
+                    window.Opacity -= stepSize;
+                    await System.Threading.Tasks.Task.Delay(stepDelay);
+                }
+                window.Opacity = targetOpacity;
+
+                // Cycle: Gradient -> Dark -> Light -> Gradient
+                switch (CurrentTheme)
+                {
+                    case ThemeType.Gradient:
+                        CurrentTheme = ThemeType.Dark;
+                        break;
+                    case ThemeType.Dark:
+                        CurrentTheme = ThemeType.Light;
+                        break;
+                    case ThemeType.Light:
+                        CurrentTheme = ThemeType.Gradient;
+                        break;
+                }
+
+                // Apply theme change
                 ApplyThemeChange();
-                return;
+
+                // Fade back in
+                for (int i = 0; i < steps; i++)
+                {
+                    window.Opacity += stepSize;
+                    await System.Threading.Tasks.Task.Delay(stepDelay);
+                }
+                window.Opacity = 1.0;
             }
-
-            // Smooth opacity transition
-            const double targetOpacity = 0.5;
-            const int animationDurationMs = 150; // 150ms fade out + 150ms fade in = 300ms total
-            const int steps = 10;
-            double originalOpacity = window.Opacity;
-            double stepSize = (originalOpacity - targetOpacity) / steps;
-            int stepDelay = animationDurationMs / steps;
-
-            // Fade out to target opacity
-            for (int i = 0; i < steps; i++)
+            finally
             {
-                window.Opacity -= stepSize;
-                await System.Threading.Tasks.Task.Delay(stepDelay);
+                _isThemeChanging = false;
             }
-            window.Opacity = targetOpacity;
-
-            // Apply theme change
-            ApplyThemeChange();
-
-            // Fade back in to full opacity
-            for (int i = 0; i < steps; i++)
-            {
-                window.Opacity += stepSize;
-                await System.Threading.Tasks.Task.Delay(stepDelay);
-            }
-            window.Opacity = originalOpacity;
         }
 
         private void ApplyThemeChange()
         {
-            IsDarkTheme = !IsDarkTheme;
-            var themeUri = IsDarkTheme 
-                ? new Uri("Themes/DarkTheme.xaml", UriKind.Relative) 
-                : new Uri("Themes/LightTheme.xaml", UriKind.Relative);
+
+
+            Uri themeUri;
+            switch (CurrentTheme)
+            {
+                case ThemeType.Gradient:
+                    themeUri = new Uri("Themes/GradientTheme.xaml", UriKind.Relative);
+                    break;
+                case ThemeType.Light:
+                    themeUri = new Uri("Themes/LightTheme.xaml", UriKind.Relative);
+                    break;
+                case ThemeType.Dark:
+                default:
+                    themeUri = new Uri("Themes/DarkTheme.xaml", UriKind.Relative);
+                    break;
+            }
             
             if (Application.Current is App app)
             {
                 app.ChangeTheme(themeUri);
             }
+
+            // Notify legacy property just in case
+            OnPropertyChanged(nameof(IsDarkTheme));
         }
 
         private void ShowKeyboardShortcuts()
