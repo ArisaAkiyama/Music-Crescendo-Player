@@ -9,6 +9,14 @@
 
     <!-- Glassmorphism: More transparent dark cards to let the glow show through -->
     <SolidColorBrush x:Key="CardBackgroundBrush" Color="#66121212"/>
+    <SolidColorBrush x:Key="PopupBackgroundBrush" Color="#121212"/>
+
+    <!-- Mini Player Gradient (Same as Main App but Transparent) -->
+    <RadialGradientBrush x:Key="MiniPlayerBackgroundBrush" Center="0.5,0" GradientOrigin="0.5,-0.2" RadiusX="1.2" RadiusY="1.2">
+        <GradientStop Color="#87CEEB" Offset="0.0"/>
+        <GradientStop Color="#1E3A4C" Offset="0.5"/>
+        <GradientStop Color="#050505" Offset="1.0"/> <!-- Black Background (Reverted) -->
+    </RadialGradientBrush>
     
     <!-- Text Colors -->
     <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFFFFF"/>

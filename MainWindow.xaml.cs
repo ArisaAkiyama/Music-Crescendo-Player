@@ -2,8 +2,18 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using DesktopMusicPlayer.Services;
 using DesktopMusicPlayer.ViewModels;
+using Application = System.Windows.Application;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using DragEventArgs = System.Windows.DragEventArgs;
+using Button = System.Windows.Controls.Button;
+using Point = System.Windows.Point;
+using DataFormats = System.Windows.DataFormats;
+using DragDropEffects = System.Windows.DragDropEffects;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace DesktopMusicPlayer;
 
@@ -13,10 +23,18 @@ namespace DesktopMusicPlayer;
 public partial class MainWindow : Window
 {
     private readonly MediaControlService _mediaControlService;
+    private SmtcService? _smtcService;
+    private SystemTrayService? _systemTrayService;
     
     public MainWindow()
     {
         InitializeComponent();
+        
+        // Subscribe to theme switching event for animation
+        if (Application.Current is App app)
+        {
+            app.ThemeChanging += OnThemeChanging;
+        }
         
         // Handle maximize to respect taskbar
         MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight;
@@ -71,13 +89,24 @@ public partial class MainWindow : Window
                 
                 // Start async data loading (non-blocking)
                 _ = vm.InitializeDataAsync();
+                
+                // Initialize system tray for background playback
+                _systemTrayService = new SystemTrayService(
+                    vm,
+                    ShowFromTray,
+                    ExitApplication
+                );
             }
         };
+        
+
         
         // Cleanup on window close
         Closed += (s, e) =>
         {
             _mediaControlService.Dispose();
+            _smtcService?.Dispose();
+            _systemTrayService?.Dispose();
             
             // Dispose ViewModel to stop audio
             if (DataContext is MainViewModel vm)
@@ -96,30 +125,122 @@ public partial class MainWindow : Window
         {
             _mediaControlService.Initialize(this);
             
-            // Subscribe to media key events
+            // Subscribe to media key events (for keyboard shortcuts when window is focused)
             _mediaControlService.PlayPausePressed += (s, e) => viewModel.PlayPauseCommand.Execute(null);
             _mediaControlService.PlayPressed += (s, e) => viewModel.PlayCommand.Execute(null);
             _mediaControlService.PausePressed += (s, e) => viewModel.PauseCommand.Execute(null);
             _mediaControlService.StopPressed += (s, e) => viewModel.PauseCommand.Execute(null);
             _mediaControlService.NextPressed += (s, e) => viewModel.NextCommand.Execute(null);
             _mediaControlService.PreviousPressed += (s, e) => viewModel.PreviousCommand.Execute(null);
+            
             _mediaControlService.MutePressed += (s, e) => 
             {
-                // Toggle mute: if volume > 0, set to 0; otherwise restore to 0.5
-                viewModel.Volume = viewModel.Volume > 0 ? 0 : 0.5;
+                 // Toggle mute: if volume > 0, set to 0; otherwise restore to 0.5
+                 viewModel.Volume = viewModel.Volume > 0 ? 0 : 0.5;
             };
+            
             _mediaControlService.VolumeUpPressed += (s, e) => 
             {
-                viewModel.Volume = Math.Min(1.0, viewModel.Volume + 0.05);
+                 viewModel.Volume = Math.Min(1.0, viewModel.Volume + 0.05);
             };
+            
             _mediaControlService.VolumeDownPressed += (s, e) => 
             {
-                viewModel.Volume = Math.Max(0.0, viewModel.Volume - 0.05);
+                 viewModel.Volume = Math.Max(0.0, viewModel.Volume - 0.05);
+            };
+            
+            // Initialize SMTC for Bluetooth headset support (works in background)
+            _smtcService = new SmtcService();
+            _smtcService.Initialize();
+            
+            // Wire up SMTC events
+            _smtcService.PlayPressed += (s, e) => 
+            {
+                viewModel.PlayCommand.Execute(null);
+                _smtcService.SetPlaybackStatus(true);
+            };
+            _smtcService.PausePressed += (s, e) => 
+            {
+                viewModel.PauseCommand.Execute(null);
+                _smtcService.SetPlaybackStatus(false);
+            };
+            _smtcService.NextPressed += (s, e) => viewModel.NextCommand.Execute(null);
+            _smtcService.PreviousPressed += (s, e) => viewModel.PreviousCommand.Execute(null);
+            _smtcService.StopPressed += (s, e) => 
+            {
+                viewModel.PauseCommand.Execute(null);
+                _smtcService.SetPlaybackStatus(false);
+            };
+            
+            // Subscribe to ViewModel property changes to update SMTC
+            viewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(MainViewModel.CurrentSong))
+                {
+                    if (viewModel.CurrentSong != null)
+                    {
+                        _smtcService.UpdateMetadata(
+                            viewModel.CurrentSong.Title,
+                            viewModel.CurrentSong.Artist,
+                            viewModel.CurrentSong.Album);
+                    }
+                    else
+                    {
+                        _smtcService.ClearMetadata();
+                    }
+                }
+                else if (e.PropertyName == nameof(MainViewModel.IsPlaying))
+                {
+                    _smtcService.SetPlaybackStatus(viewModel.IsPlaying);
+                }
             };
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Failed to initialize media controls: {ex.Message}");
+        }
+    }
+
+    private void OnThemeChanging()
+    {
+        try
+        {
+            // Lightweight Transition: Fade Solid Color
+            // 1. Capture current background color to smooth the transition
+            if (FindResource("AppBackgroundBrush") is SolidColorBrush currentBg)
+            {
+                ThemeTransitionOverlay.Background = currentBg;
+            }
+            else
+            {
+                // Fallback if brush isn't solid or found
+                ThemeTransitionOverlay.Background = new SolidColorBrush(Colors.Black);
+            }
+
+            // 2. Make overlay visible (covering the screen with old background color)
+            ThemeTransitionOverlay.Opacity = 1;
+            ThemeTransitionOverlay.Visibility = Visibility.Visible;
+
+            // 3. Animate Fade Out (revealing New Theme underneath)
+            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(300))
+            {
+                BeginTime = TimeSpan.FromMilliseconds(50), // Slight delay to let theme switch happen
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            
+            fadeOut.Completed += (s, e) => 
+            {
+                ThemeTransitionOverlay.Visibility = Visibility.Collapsed;
+                ThemeTransitionOverlay.Background = null; // Clear brush
+            };
+
+            ThemeTransitionOverlay.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Theme animation error: {ex}");
+             ThemeTransitionOverlay.Opacity = 0;
+             ThemeTransitionOverlay.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -340,45 +461,7 @@ public partial class MainWindow : Window
             }
         }
 
-    // Click-to-seek on slider track - Simple & Reliable Implementation
-    private void Slider_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (DataContext is MainViewModel viewModel && sender is Slider slider)
-        {
-            // Get click position relative to the slider
-            Point clickPoint = e.GetPosition(slider);
-            double sliderWidth = slider.ActualWidth;
-            
-            // Validate slider dimensions
-            if (sliderWidth <= 0 || slider.Maximum <= slider.Minimum)
-                return;
-            
-            // Calculate the ratio (0.0 to 1.0) of click position
-            double ratio = clickPoint.X / sliderWidth;
-            ratio = Math.Max(0, Math.Min(1, ratio)); // Clamp to [0, 1]
-            
-            // Calculate the target value
-            double targetValue = slider.Minimum + (ratio * (slider.Maximum - slider.Minimum));
-            
-            // Set IsDragging to prevent timer overwrite during seek
-            viewModel.IsDragging = true;
-            
-            // Update CurrentProgress to the clicked position
-            viewModel.CurrentProgress = targetValue;
-            
-            // Also update the slider's value directly for immediate visual feedback
-            slider.Value = targetValue;
-        }
-    }
-    
-    private void Slider_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        if (DataContext is MainViewModel viewModel)
-        {
-            // Execute the seek to the current progress position
-            viewModel.SeekEndCommand.Execute(null);
-        }
-    }
+
     
     // Helper: Find a visual child of a specific type
     private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
@@ -469,14 +552,11 @@ public partial class MainWindow : Window
         _activeMiniPlayer.Closed += (s, args) =>
         {
             _activeMiniPlayer = null;
-            this.Show();
+            // Native Restore Animation
+            this.Show(); // Ensure it's not hidden
             this.WindowState = WindowState.Normal;
             this.Activate();
-            
-            // Fade In Main Window
-            this.Opacity = 0;
-            var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(1.0, TimeSpan.FromSeconds(0.2));
-            this.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            this.Opacity = 1.0; // Ensure visible
         };
 
         // Calculate Position & Show
@@ -486,24 +566,57 @@ public partial class MainWindow : Window
         _activeMiniPlayer.Left = (SystemParameters.PrimaryScreenWidth - 380) / 2;
         _activeMiniPlayer.Show();
 
-        // Animation before Minimize
-        var fadeOut = new System.Windows.Media.Animation.DoubleAnimation(0.0, TimeSpan.FromSeconds(0.2));
-        fadeOut.Completed += (s, _) => 
-        {
-            // Instead of Hide(), we Minimize to keep Taskbar Icon stable
-            this.WindowState = WindowState.Minimized;
-            this.Opacity = 1; // Reset opacity so it's visible when restored
-        };
-        this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+        // Native Minimize Animation
+        this.WindowState = WindowState.Minimized;
     }
 
     protected override void OnStateChanged(EventArgs e)
     {
         base.OnStateChanged(e);
-        // If user restores Main Window from Taskbar, Close Mini Player
-        if (this.WindowState == WindowState.Normal && _activeMiniPlayer != null)
+        // If user minimizes Main Window, show tray icon but keep taskbar icon visible
+        if (this.WindowState == WindowState.Minimized)
         {
-            _activeMiniPlayer.Close();
+            _systemTrayService?.Show(true);
+            // Don't hide the window - keep it in taskbar
         }
+        
+        // If user restores Main Window from Taskbar, Close Mini Player
+        if (this.WindowState == WindowState.Normal)
+        {
+            _systemTrayService?.Show(false);
+            if (_activeMiniPlayer != null)
+            {
+                _activeMiniPlayer.Close();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Minimizes the window to system tray.
+    /// </summary>
+    private void MinimizeToTray()
+    {
+        _systemTrayService?.Show(true);
+        this.Hide();
+    }
+    
+    /// <summary>
+    /// Shows the main window from system tray.
+    /// </summary>
+    private void ShowFromTray()
+    {
+        _systemTrayService?.Show(false);
+        this.Show();
+        this.WindowState = WindowState.Normal;
+        this.Activate();
+    }
+    
+    /// <summary>
+    /// Exits the application completely.
+    /// </summary>
+    private void ExitApplication()
+    {
+        _systemTrayService?.Dispose();
+        Application.Current.Shutdown();
     }
 }

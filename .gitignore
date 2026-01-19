@@ -4,9 +4,9 @@
 dist/
 # Inno Setup
 InnoOutput/
-setup.iss
 CustomInstallerOutput/
 UninstallerOutput/
+publish/
 
 # Visual Studio
 .vs/

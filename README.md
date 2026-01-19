@@ -23,15 +23,19 @@ A modern, elegant, and lightweight desktop music player built for Windows. **Cre
   - Interactive hover hints (e.g., Search shortcut hint).
 
 ### 🎵 Playback & Control
-- **Smart Library & Playlists**: Organize local music, manage "Liked Songs", and create custom playlists.
+- **Smart Library & Folder Sync**: 
+  - **Auto-Sync**: Automatically detects new music files in your Music folder (System or Project).
+  - **Smart Playlist Matching**: Drag-and-drop a folder (e.g., "K-Pop") and if a matching playlist exists, songs are auto-added there.
+- **Bluetooth & Media Keys**: Full support for Play/Pause, Next/Prev via Bluetooth headphones and keyboard media keys, even when minimized (SMTC Integration).
+- **Multi-Format Support**: Plays `.mp3`, `.m4a`, `.wav`, `.flac`, `.wma`, `.aac`, `.ogg`.
 - **Robust Audio Engine**: Powered by NAudio with support for precise **Seek-on-Click** and VBR MP3 compatibility.
-- **USB/Flashdrive Support**: Import and play music directly from external drives.
 - **Queue System**: Manage upcoming tracks with a dynamic play queue modal.
 
 ### 🛠️ Utilities
-- **Global Media Controls**: Native Windows Media Transport integration.
+- **Installer & File Associations**: Automatic registration for audio files (Open with Crescendo).
+- **Global Media Controls**: Native Windows Media Transport integration shows song info in the volume overlay.
 - **Search**: Real-time filtering across your entire music library (Shortcut: `Ctrl + F`).
-- **Drag & Drop**: Seamlessly import folders or files.
+- **Drag & Drop**: Seamlessly import folders or files to immediate play.
 
 ## Tech Stack
 
@@ -41,20 +45,25 @@ A modern, elegant, and lightweight desktop music player built for Windows. **Cre
 - **Metadata**: TagLib#
 - **Icons**: Segoe MDL2 Assets
 - **Database**: SQLite (for playlists and history persistence)
+- **Installer**: Inno Setup (Self-contained, includes .NET Runtime)
 
 ## Installation
 
 1. Go to the [Releases](https://github.com/ArisaAkiyama/Music-Crescendo-Player/releases) page.
-2. Download the latest `v1.0.0-beta.2` (or latest stable).
-3. Run the installer and follow the prompts.
+2. Download the latest `v1.0.0-beta.2`.
+3. Run `Crescendo_Setup_v1.0.0-beta.2.exe`. The installer will automatically register file associations.
+4. Enjoy your music!
+
+See the [CHANGELOG](CHANGELOG.md) for a detailed history of changes.
 
 ## Building from Source
 
 Requirements:
 - Visual Studio 2022
 - .NET 8 SDK
+- Inno Setup 6 (for building installer)
 
-1. Clone functionality repository:
+1. Clone repository:
    ```bash
    git clone https://github.com/ArisaAkiyama/Music-Crescendo-Player.git
    ```

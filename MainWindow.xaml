@@ -11,14 +11,14 @@ Title="Crescendo"
 Height="720" Width="1280"
 MinHeight="600" MinWidth="900"
 WindowStartupLocation="CenterScreen"
-WindowStyle="None"
+WindowStyle="SingleBorderWindow"
 ResizeMode="CanResize"
     Icon="Assets/ocean-wave-blue.ico"
 Background="{DynamicResource AppBackgroundBrush}">
 <WindowChrome.WindowChrome>
     <WindowChrome CaptionHeight="48"
         ResizeBorderThickness="5"
-        GlassFrameThickness="0"
+        GlassFrameThickness="1"
         CornerRadius="0"/>
 </WindowChrome.WindowChrome>
 <!-- DataContext Binding -->
@@ -276,7 +276,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                      VerticalOffset="4">
                             <ContextMenu.Template>
                                 <ControlTemplate TargetType="ContextMenu">
-                                    <Border Background="#1A1A1A"
+                                    <Border Background="{DynamicResource PopupBackgroundBrush}"
                                         BorderBrush="{DynamicResource BorderBrush}"
                                         BorderThickness="1"
                                         CornerRadius="8"
@@ -321,7 +321,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         <!-- Submenu Popup -->
                                                         <Popup x:Name="Popup" AllowsTransparency="True" Focusable="False" HorizontalOffset="4" IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" Placement="Right" PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}" VerticalOffset="-4">
                                                             <Border x:Name="SubmenuBorder"
-                                                                Background="#1A1A1A"
+                                                                Background="{DynamicResource PopupBackgroundBrush}"
                                                                 BorderBrush="{DynamicResource BorderBrush}"
                                                                 BorderThickness="1"
                                                                 SnapsToDevicePixels="True"
@@ -371,7 +371,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             <MenuItem Header="File">
                                 <MenuItem Header="Add Music Folder..." Command="{Binding AddFolderCommand}"/>
                                 <MenuItem Header="Add Music Files..." Command="{Binding AddFilesCommand}"/>
-                                <Separator Background="#3E3E3E"/>
+                                <Separator Background="{DynamicResource SeparatorBrush}"/>
                                 <MenuItem Header="Exit" Command="{Binding ExitApplicationCommand}"/>
                             </MenuItem>
                             <!-- Edit -->
@@ -382,7 +382,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             <MenuItem Header="View">
                                 <MenuItem Header="Toggle Left Sidebar" Command="{Binding ToggleSidebarCommand}"/>
                                 <MenuItem Header="Toggle Right Sidebar" Command="{Binding ToggleQueueCommand}"/>
-                                <Separator Background="#3E3E3E"/>
+                                <Separator Background="{DynamicResource SeparatorBrush}"/>
                                 <MenuItem Header="Go to Current Song" Command="{Binding ScrollToCurrentCommand}"/>
 
                                 <MenuItem Header="Full Screen" Command="{Binding ToggleFullScreenCommand}" InputGestureText="F11"/>
@@ -391,7 +391,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             <!-- Help -->
                             <MenuItem Header="Help">
                                 <MenuItem Header="Keyboard Shortcuts" Command="{Binding KeyboardShortcutsCommand}"/>
-                                <Separator Background="#3E3E3E"/>
+                                <Separator Background="{DynamicResource SeparatorBrush}"/>
                                 <MenuItem Header="About Crescendo" Command="{Binding AboutCommand}"/>
                             </MenuItem>
                         </ContextMenu>
@@ -790,7 +790,9 @@ Background="{DynamicResource AppBackgroundBrush}">
                             MouseDoubleClick="SongsDataGrid_MouseDoubleClick"
                             Sorting="SongsDataGrid_Sorting"
                             CanUserSortColumns="True"
+                            CanUserResizeColumns="True"
                             VirtualizingPanel.ScrollUnit="Pixel"
+                            VirtualizingPanel.IsVirtualizing="True"
                             VirtualizingPanel.CacheLength="5,5"
                             VirtualizingPanel.CacheLengthUnit="Item"
                             VirtualizingPanel.VirtualizationMode="Recycling"
@@ -798,7 +800,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             AlternationCount="9999">
                             <DataGrid.Columns>
                                 <!-- # Column -->
-                                <DataGridTemplateColumn Header="#" Width="50" IsReadOnly="True" SortMemberPath="Id">
+                                <DataGridTemplateColumn Header="#" Width="50" IsReadOnly="True" SortMemberPath="DateAdded">
                                     <DataGridTemplateColumn.HeaderStyle>
                                         <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SpotifyDataGridColumnHeaderStyle}">
                                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -1317,7 +1319,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                     </Grid.ColumnDefinitions>
                     <!-- Left: Now Playing -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="56" Height="56" CornerRadius="28" Background="{DynamicResource CardBackgroundBrush}" Margin="0,0,14,0">
+                        <Border Width="56" Height="56" CornerRadius="28" Background="Transparent" Margin="0,0,14,0">
                             <Grid>
                                 <!-- Fallback Music Note Icon (Spinning when playing) -->
                                 <Grid RenderTransformOrigin="0.5,0.5"
@@ -1333,20 +1335,31 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         <BeginStoryboard x:Name="SpinFallbackStoryboard">
                                                             <Storyboard>
                                                                 <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(RotateTransform.Angle)"
-                                                                                 From="0" To="360"
+                                                                                 By="360"
                                                                                  Duration="0:0:4"
                                                                                  RepeatBehavior="Forever"/>
                                                             </Storyboard>
                                                         </BeginStoryboard>
                                                     </DataTrigger.EnterActions>
                                                     <DataTrigger.ExitActions>
-                                                        <StopStoryboard BeginStoryboardName="SpinFallbackStoryboard"/>
+                                                        <PauseStoryboard BeginStoryboardName="SpinFallbackStoryboard"/>
                                                     </DataTrigger.ExitActions>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Grid.Style>
-                                    <TextBlock Text="&#xE8D6;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Image Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"
+                                           RenderTransformOrigin="0.5,0.5">
+                                        <Image.Source>
+                                            <BitmapImage UriSource="/Assets/Spin-disk2.png" DecodePixelWidth="128"/>
+                                        </Image.Source>
+                                        <Image.RenderTransform>
+                                            <ScaleTransform ScaleX="1.15" ScaleY="1.15"/>
+                                        </Image.RenderTransform>
+                                        <Image.Clip>
+                                            <EllipseGeometry Center="28,28" RadiusX="28" RadiusY="28"/>
+                                        </Image.Clip>
+                                    </Image>
                                 </Grid>
                                 
                                 <!-- Spinning Album Art -->
@@ -1363,14 +1376,14 @@ Background="{DynamicResource AppBackgroundBrush}">
                                                         <BeginStoryboard x:Name="SpinStoryboard">
                                                             <Storyboard>
                                                                 <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(RotateTransform.Angle)"
-                                                                                 From="0" To="360"
+                                                                                 By="360"
                                                                                  Duration="0:0:4"
                                                                                  RepeatBehavior="Forever"/>
                                                             </Storyboard>
                                                         </BeginStoryboard>
                                                     </DataTrigger.EnterActions>
                                                     <DataTrigger.ExitActions>
-                                                        <StopStoryboard BeginStoryboardName="SpinStoryboard"/>
+                                                        <PauseStoryboard BeginStoryboardName="SpinStoryboard"/>
                                                     </DataTrigger.ExitActions>
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -1504,9 +1517,13 @@ Background="{DynamicResource AppBackgroundBrush}">
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="{Binding CurrentTimeFormatted}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <Slider x:Name="ProgressSlider" Grid.Column="1" Value="{Binding CurrentProgress}" Maximum="{Binding TotalDuration}" IsMoveToPointEnabled="True" Cursor="Hand"
-                                Thumb.DragStarted="Slider_DragStarted" Thumb.DragCompleted="Slider_DragCompleted"
-                                PreviewMouseLeftButtonDown="Slider_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="Slider_PreviewMouseLeftButtonUp">
+                            <Slider x:Name="ProgressSlider" Grid.Column="1" 
+                                Value="{Binding CurrentProgress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                Maximum="{Binding TotalDuration}" 
+                                IsMoveToPointEnabled="True" 
+                                Cursor="Hand"
+                                Thumb.DragStarted="Slider_DragStarted" 
+                                Thumb.DragCompleted="Slider_DragCompleted">
                                 <Slider.Style>
                                     <Style TargetType="Slider" BasedOn="{StaticResource ProgressSliderStyle}">
                                         <Style.Triggers>
@@ -1568,7 +1585,11 @@ Background="{DynamicResource AppBackgroundBrush}">
                                     </TextBlock.Style>
                                 </TextBlock>
                             </Button>
-                            <Slider Width="100" Value="{Binding Volume}" Maximum="1" Style="{StaticResource VolumeSliderStyle}"/>
+                            <Slider Width="100" 
+                                Value="{Binding Volume, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                Maximum="1" 
+                                IsMoveToPointEnabled="True"
+                                Style="{StaticResource VolumeSliderStyle}"/>
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -1694,7 +1715,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                 Background="#99000000"
                 Grid.RowSpan="3"
                 Panel.ZIndex="105">
-                <Border Background="#1A1A1A"
+                <Border Background="{DynamicResource PopupBackgroundBrush}"
                     CornerRadius="12"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -1753,7 +1774,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                     <Setter Property="FontSize" Value="14"/>
                                     <Setter Property="Margin" Value="0,8"/>
-                                    <Setter Property="Background" Value="#3E3E3E"/>
+                                    <Setter Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
                                     <Setter Property="Padding" Value="8,4"/>
                                     <Setter Property="HorizontalAlignment" Value="Left"/>
                                     <Setter Property="MinWidth" Value="80"/>
@@ -1761,7 +1782,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                                 </Style>
                                 <Style TargetType="Border" x:Key="KeyBorderStyle">
                                     <Setter Property="CornerRadius" Value="4"/>
-                                    <Setter Property="Background" Value="#3E3E3E"/>
+                                    <Setter Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
                                     <Setter Property="Margin" Value="0,6"/>
                                     <Setter Property="Padding" Value="12,6"/>
                                     <Setter Property="HorizontalAlignment" Value="Right"/>
@@ -1843,7 +1864,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                   Background="#99000000"
                   Grid.RowSpan="3"
                   Panel.ZIndex="105">
-                <Border Background="#1A1A1A"
+                <Border Background="{DynamicResource PopupBackgroundBrush}"
                     CornerRadius="12"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -1928,7 +1949,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                 Background="#99000000"
                 Grid.RowSpan="3"
                 Panel.ZIndex="105">
-                <Border Background="#1A1A1A"
+                <Border Background="{DynamicResource PopupBackgroundBrush}"
                     CornerRadius="12"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -1943,11 +1964,11 @@ Background="{DynamicResource AppBackgroundBrush}">
                         </Grid.RowDefinitions>
                         <!-- Header -->
                         <Grid Margin="0,0,0,24">
-                            <TextBlock Text="Play Queue" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                            <TextBlock Text="Play Queue" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="24" FontWeight="Bold"/>
                             <Button Style="{StaticResource IconButtonStyle}"
                                 Command="{Binding CloseQueuePopupCommand}"
                                 HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="White"/>
+                                <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
                             </Button>
                         </Grid>
                         <!-- Content (List) -->
@@ -2025,8 +2046,8 @@ Background="{DynamicResource AppBackgroundBrush}">
                                             </Border>
                                             <!-- Text -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding Artist}" Foreground="#B3B3B3" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Title}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Artist}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="13" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                             <!-- Remove Button -->
                                             <Button Grid.Column="2"
@@ -2110,6 +2131,13 @@ Background="{DynamicResource AppBackgroundBrush}">
                     </Grid>
                 </Border>
             </Grid>
+
+            <!-- Theme Transition Overlay -->
+            <Border x:Name="ThemeTransitionOverlay" 
+                   Grid.RowSpan="3" 
+                   Panel.ZIndex="999" 
+                   IsHitTestVisible="False" 
+                   Opacity="0"/>
         </Grid>
     </Border>
 </Window>

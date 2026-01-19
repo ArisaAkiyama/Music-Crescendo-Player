@@ -17,106 +17,176 @@
         ResizeMode="NoResize"
         ShowInTaskbar="False">
 
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Resources/Styles.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Window.Resources>
+
 
     <!-- Theme-aware Border -->
-    <Border x:Name="MainBorder" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" 
+    <Border x:Name="MainBorder" Background="{DynamicResource MiniPlayerBackgroundBrush}" CornerRadius="12" 
             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-            MouseLeftButtonDown="Window_MouseLeftButtonDown">
+            MouseLeftButtonDown="Window_MouseLeftButtonDown"
+            Padding="16,12">
+        <Border.Triggers>
+            <EventTrigger RoutedEvent="MouseEnter">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="InfoPanel" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                        <DoubleAnimation Storyboard.TargetName="ControlsOverlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="MouseLeave">
+                 <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="InfoPanel" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.3"/>
+                        <DoubleAnimation Storyboard.TargetName="ControlsOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.3"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Border.Triggers>
+
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/> <!-- Main Info -->
-            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/> <!-- Image -->
+                <ColumnDefinition Width="*"/>    <!-- Text -->
+                <ColumnDefinition Width="Auto"/> <!-- Controls -->
+            </Grid.ColumnDefinitions>
 
-                <!-- Standard View (Cover + Text) -->
-                <!-- Visible by Default, Fades Out on Hover -->
-                <Grid x:Name="StandardView" Grid.Column="0" Grid.ColumnSpan="2" Margin="12,12,12,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Cover Art -->
-                    <Grid Grid.Column="0" Width="48" Height="48">
-                        <!-- Fallback Background -->
-                        <Border Background="{DynamicResource ControlHoverBrush}" CornerRadius="6">
-                            <TextBlock Text="&#xE8D6;" FontFamily="Segoe Fluent Icons" 
-                                       FontSize="20" Foreground="{DynamicResource SecondaryTextBrush}" 
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <!-- Cover Image -->
-                        <Rectangle RadiusX="6" RadiusY="6">
-                            <Rectangle.Fill>
-                                <ImageBrush ImageSource="{Binding CurrentSong.CoverArt}" Stretch="UniformToFill"/>
-                            </Rectangle.Fill>
-                        </Rectangle>
+            <!-- Cover Art (Spinning Disc) -->
+            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24" Margin="0,0,12,0" Background="Transparent">
+                <Grid>
+                     <!-- Fallback Icon (Spinning when playing) -->
+                    <Grid RenderTransformOrigin="0.5,0.5"
+                          Visibility="{Binding CurrentSong.HasCoverArt, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <Grid.RenderTransform>
+                            <RotateTransform Angle="0"/>
+                        </Grid.RenderTransform>
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="SpinFallbackStoryboard">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(RotateTransform.Angle)"
+                                                                     By="360"
+                                                                     Duration="0:0:4"
+                                                                     RepeatBehavior="Forever"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <PauseStoryboard BeginStoryboardName="SpinFallbackStoryboard"/>
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Image Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"
+                               RenderTransformOrigin="0.5,0.5">
+                            <Image.Source>
+                                <BitmapImage UriSource="/Assets/Spin-disk2.png" DecodePixelWidth="128"/>
+                            </Image.Source>
+                            <Image.RenderTransform>
+                                <ScaleTransform ScaleX="1.15" ScaleY="1.15"/>
+                            </Image.RenderTransform>
+                            <Image.Clip>
+                                <EllipseGeometry Center="24,24" RadiusX="24" RadiusY="24"/>
+                            </Image.Clip>
+                        </Image>
                     </Grid>
 
-                    <!-- Text Info -->
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,24,0">
-                        <TextBlock Text="{Binding CurrentSong.Title, FallbackValue='No Song Playing'}" 
-                                   Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="Bold" FontSize="13" 
-                                   TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Text="{Binding CurrentSong.Artist, FallbackValue='Select a song'}" 
-                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" 
-                                   TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                    </StackPanel>
-                </Grid>
+                    <!-- Actual Spinning Image -->
+                    <Grid RenderTransformOrigin="0.5,0.5"
+                          Visibility="{Binding CurrentSong.HasCoverArt, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.RenderTransform>
+                            <RotateTransform Angle="0"/>
+                        </Grid.RenderTransform>
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="SpinStoryboard">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(RotateTransform.Angle)"
+                                                                     By="360"
+                                                                     Duration="0:0:4"
+                                                                     RepeatBehavior="Forever"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <PauseStoryboard BeginStoryboardName="SpinStoryboard"/>
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Image Source="{Binding CurrentSong.CoverArt}" Stretch="UniformToFill">
+                            <Image.Clip>
+                                <EllipseGeometry Center="24,24" RadiusX="24" RadiusY="24"/>
+                            </Image.Clip>
+                        </Image>
+                    </Grid>
 
-                <!-- Controls View (Slider + Centered Buttons) -->
-                <!-- Hidden by Default, Fades In on Hover -->
-                <Grid x:Name="ControlsView" Grid.Column="0" Grid.ColumnSpan="2" 
-                      Opacity="0" IsHitTestVisible="False" VerticalAlignment="Center" Margin="12,0">
+                    <!-- Vinyl Center (Layered: Dark Ring + Silver Dot) -->
+                    <Ellipse Width="14" Height="14" Fill="#1A1A1A" HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Visibility="{Binding CurrentSong.HasCoverArt, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}"/>
+                    <Ellipse Width="5" Height="5" Fill="#C0C0C0" HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Visibility="{Binding CurrentSong.HasCoverArt, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}"/>
+                </Grid>
+            </Border>
+
+            <!-- Central Area: Layered Info & Controls -->
+            <Grid Grid.Column="1" Margin="0,0,12,0" VerticalAlignment="Center">
+                
+                <!-- Layer A: Metadata (Default Visible) -->
+                <StackPanel x:Name="InfoPanel" VerticalAlignment="Center" MaxWidth="220">
+                    <TextBlock Text="{Binding CurrentSong.Title, FallbackValue='No Song Playing'}" 
+                               Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" FontSize="14" 
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding CurrentSong.Artist, FallbackValue='Crescendo'}" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" 
+                               TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <!-- Layer B: Controls Overlay (Default Hidden) -->
+                <Grid x:Name="ControlsOverlay" Opacity="0" VerticalAlignment="Center">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/> <!-- Buttons -->
+                        <RowDefinition Height="Auto"/> <!-- Slider -->
                     </Grid.RowDefinitions>
 
-                    <!-- Buttons Row (Centered) -->
+                    <!-- Playback Buttons -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
-                        
-                        <!-- Shuffle Button -->
-                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding ShuffleCommand}" Margin="0,0,16,0"
-                                ToolTip="Shuffle">
-                            <TextBlock x:Name="ShuffleIcon" Text="&#xE8B1;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
-                            <Button.Resources>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/> <!-- Default Color -->
+                        <!-- Shuffle -->
+                        <Button Command="{Binding ShuffleCommand}" Margin="0,0,8,0" ToolTip="Shuffle" Width="28" Height="28">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsShuffleEnabled}" Value="True">
-                                            <Setter Property="Foreground" Value="#87CEEB"/> <!-- Sky Blue -->
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsShuffleEnabled}" Value="False">
-                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                            <Setter Property="ToolTip" Value="Shuffle On"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Button.Resources>
+                            </Button.Style>
+                            <TextBlock Text="&#xE8B1;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
                         </Button>
 
-                        <!-- Previous -->
-                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding PreviousCommand}" Margin="8,0"
-                                ToolTip="Previous">
-                            <TextBlock Text="&#xE892;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding PreviousCommand}" Margin="0,0,8,0" ToolTip="Previous" Width="32" Height="32">
+                            <TextBlock Text="&#xE892;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
                         </Button>
 
-                        <!-- Play/Pause -->
-                        <Button Width="36" Height="36" Command="{Binding PlayPauseCommand}" Margin="12,0"
-                                ToolTip="Play/Pause">
-                            <Button.Template>
+                        <Button Width="36" Height="36" Command="{Binding PlayPauseCommand}" Margin="0,0,8,0" ToolTip="Play/Pause">
+                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="bdr" Background="#87CEEB" CornerRadius="18">
                                         <Grid>
-                                            <TextBlock Text="&#xE768;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="White"
+                                            <TextBlock Text="&#xE768;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                                        Visibility="{Binding IsPlaying, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                                            <TextBlock Text="&#xE769;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="White"
+                                            <TextBlock Text="&#xE769;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="White"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                                        Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                         </Grid>
@@ -130,56 +200,59 @@
                             </Button.Template>
                         </Button>
 
-                        <!-- Next -->
-                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding NextCommand}" Margin="8,0"
-                                ToolTip="Next">
-                            <TextBlock Text="&#xE893;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding NextCommand}" Margin="0,0,8,0" ToolTip="Next" Width="32" Height="32">
+                            <TextBlock Text="&#xE893;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
                         </Button>
-                        
-                        <!-- Repeat Button -->
-                        <Button Style="{StaticResource IconButtonStyle}" Command="{Binding RepeatCommand}" Margin="16,0,0,0"
-                                ToolTip="Repeat">
-                            <Button.Resources>
-                                <Style TargetType="TextBlock" x:Key="RepeatIconStyle">
+
+                        <!-- Repeat -->
+                        <Button Command="{Binding RepeatCommand}" ToolTip="Repeat" Width="28" Height="28">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RepeatMode}" Value="Off">
-                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
-                                            <Setter Property="Text" Value="&#xE8EE;"/> <!-- Repeat All Icon (Off) -->
-                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding RepeatMode}" Value="RepeatAll">
-                                            <Setter Property="Foreground" Value="#87CEEB"/> <!-- Sky Blue -->
-                                            <Setter Property="Text" Value="&#xE8EE;"/> <!-- Repeat All Icon -->
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                            <Setter Property="ToolTip" Value="Repeat All"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding RepeatMode}" Value="RepeatOne">
-                                            <Setter Property="Foreground" Value="#87CEEB"/> <!-- Sky Blue -->
-                                            <Setter Property="Text" Value="&#xE8ED;"/> <!-- Repeat One Icon -->
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                            <Setter Property="ToolTip" Value="Repeat One"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Button.Resources>
-                            <TextBlock Style="{StaticResource RepeatIconStyle}" FontFamily="Segoe Fluent Icons" FontSize="14"/>
+                            </Button.Style>
+                            <TextBlock FontFamily="Segoe Fluent Icons" FontSize="12">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="&#xE8EE;"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RepeatMode}" Value="RepeatOne">
+                                                <Setter Property="Text" Value="&#xE8ED;"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </Button>
                     </StackPanel>
 
-                    <!-- Progress Row: Time - Slider - Time -->
-                    <Grid Grid.Row="1" VerticalAlignment="Center">
-                        <Grid.ColumnDefinitions>
+                    <!-- Compact Slider -->
+                    <Grid Grid.Row="1" Height="14" VerticalAlignment="Center">
+                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
-                        <TextBlock Grid.Column="0" Text="{Binding CurrentTimeFormatted}" 
-                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
-
+                        
+                        <TextBlock Grid.Column="0" Text="{Binding CurrentTimeFormatted}" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        
                         <Slider Grid.Column="1" Value="{Binding CurrentProgress}" Maximum="{Binding TotalDuration}" 
-                                IsMoveToPointEnabled="True" Cursor="Hand"
-                                VerticalAlignment="Center"
+                                IsMoveToPointEnabled="True" Cursor="Hand" VerticalAlignment="Center" Focusable="False"
                                 Thumb.DragStarted="Slider_DragStarted" Thumb.DragCompleted="Slider_DragCompleted"
                                 PreviewMouseLeftButtonDown="Slider_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="Slider_PreviewMouseLeftButtonUp">
-                            <Slider.Style>
+                             <Slider.Style>
                                 <Style TargetType="Slider" BasedOn="{StaticResource ProgressSliderStyle}">
-                                    <Style.Triggers>
+                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding CurrentSong}" Value="{x:Null}">
                                             <Setter Property="IsEnabled" Value="False"/>
                                         </DataTrigger>
@@ -187,61 +260,21 @@
                                 </Style>
                             </Slider.Style>
                         </Slider>
-
-                        <TextBlock Grid.Column="2" Text="{Binding TotalTimeFormatted}" 
-                                   Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        
+                         <TextBlock Grid.Column="2" Text="{Binding TotalTimeFormatted}" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                     </Grid>
                 </Grid>
+            </Grid>
 
-
-            <!-- Expand Button (Always Top Right) -->
-            <Button Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top"
-                    Style="{StaticResource IconButtonStyle}"
-                    Click="ExpandButton_Click"
-                    ToolTip="Expand to Main Player"
-                    Margin="0,8,8,0">
-                <TextBlock Text="&#xE740;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
-            </Button>
+            <!-- Compact Controls (Only Expand) -->
+            <StackPanel x:Name="ExpandControlsPanel" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                 <!-- Expand -->
+                <Button Style="{StaticResource IconButtonStyle}" Click="ExpandButton_Click" ToolTip="Expand" Width="32" Height="32">
+                    <TextBlock Text="&#xE740;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <!-- Animation Triggers -->
-        <Border.Triggers>
-            <EventTrigger RoutedEvent="MouseEnter">
-                <BeginStoryboard>
-                    <Storyboard>
-                        <!-- Fade Out Standard View -->
-                        <DoubleAnimation Storyboard.TargetName="StandardView" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
-                        
-                        <!-- Fade In Controls View -->
-                        <DoubleAnimation Storyboard.TargetName="ControlsView" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ControlsView" Storyboard.TargetProperty="IsHitTestVisible">
-                            <DiscreteObjectKeyFrame KeyTime="0:0:0">
-                                <DiscreteObjectKeyFrame.Value>
-                                    <sys:Boolean>True</sys:Boolean>
-                                </DiscreteObjectKeyFrame.Value>
-                            </DiscreteObjectKeyFrame>
-                        </ObjectAnimationUsingKeyFrames>
-                    </Storyboard>
-                </BeginStoryboard>
-            </EventTrigger>
-            <EventTrigger RoutedEvent="MouseLeave">
-                <BeginStoryboard>
-                    <Storyboard>
-                        <!-- Fade In Standard View -->
-                        <DoubleAnimation Storyboard.TargetName="StandardView" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                        
-                        <!-- Fade Out Controls View -->
-                        <DoubleAnimation Storyboard.TargetName="ControlsView" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
-                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ControlsView" Storyboard.TargetProperty="IsHitTestVisible">
-                            <DiscreteObjectKeyFrame KeyTime="0:0:0.2">
-                                <DiscreteObjectKeyFrame.Value>
-                                    <sys:Boolean>False</sys:Boolean>
-                                </DiscreteObjectKeyFrame.Value>
-                            </DiscreteObjectKeyFrame>
-                        </ObjectAnimationUsingKeyFrames>
-                    </Storyboard>
-                </BeginStoryboard>
-            </EventTrigger>
-        </Border.Triggers>
     </Border>
 </Window>
+

@@ -2,6 +2,8 @@
 using System.Data;
 using System.Windows;
 using DesktopMusicPlayer.Services;
+using Application = System.Windows.Application;
+using MessageBox = System.Windows.MessageBox;
 
 namespace DesktopMusicPlayer;
 
@@ -11,8 +13,25 @@ namespace DesktopMusicPlayer;
 
     public partial class App : Application
     {
+        /// <summary>
+        /// File path passed via command-line (when opening MP3 directly)
+        /// </summary>
+        public static string? StartupFilePath { get; private set; }
+        
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Capture command-line arguments (for file association)
+            if (e.Args.Length > 0)
+            {
+                var filePath = e.Args[0];
+                if (System.IO.File.Exists(filePath) && 
+                    filePath.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+                {
+                    StartupFilePath = filePath;
+                    System.Diagnostics.Debug.WriteLine($"Startup file: {StartupFilePath}");
+                }
+            }
+            
             // Initialize SQLite database and create tables if needed
             try
             {
@@ -46,8 +65,13 @@ namespace DesktopMusicPlayer;
              }
         }
         
+        public event Action? ThemeChanging;
+
         public void ChangeTheme(Uri themeUri)
         {
+            // Notify listeners that theme is about to change (for animations)
+            ThemeChanging?.Invoke(); // Triggers capture of current state
+
             ResourceDictionary newTheme = new ResourceDictionary() { Source = themeUri };
 
             // Find existing theme dictionary (Dark or Light) and replace it

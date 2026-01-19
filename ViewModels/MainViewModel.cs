@@ -10,6 +10,8 @@ using DesktopMusicPlayer.Models;
 using DesktopMusicPlayer.Services;
 using Microsoft.Win32;
 using System.Windows;
+using Application = System.Windows.Application;
+using MessageBox = System.Windows.MessageBox;
 
 namespace DesktopMusicPlayer.ViewModels
 {
@@ -56,6 +58,8 @@ namespace DesktopMusicPlayer.ViewModels
 
         // Progress
         private double _currentProgress;
+        private bool _isProgressUpdateFromTimer = false; // Flag to prevent feedback loops
+
         public double CurrentProgress
         {
             get => _currentProgress;
@@ -66,9 +70,11 @@ namespace DesktopMusicPlayer.ViewModels
                     // Always update time display when progress changes
                     CurrentTimeFormatted = TimeSpan.FromSeconds(value).ToString(@"m\:ss");
                     
-                    // Update audio position when slider is dragged
-                    if (_isDragging && _audioService != null)
+                    // Logic: Update audio position ONLY if change came from User (UI), not Timer
+                    if (!_isProgressUpdateFromTimer && _audioService != null)
                     {
+                        // Limit seek frequency/overhead if needed, but for local files invalidating buffer is fast enough
+                        // This handles both Dragging AND Click-to-Seek (IsMoveToPointEnabled)
                         _audioService.Position = TimeSpan.FromSeconds(value);
                     }
                 }
@@ -474,6 +480,9 @@ namespace DesktopMusicPlayer.ViewModels
         // SQLite repositories
         private readonly SongRepository _songRepository;
         private readonly PlaylistRepository _playlistRepository;
+        
+        // Folder Watch Service for auto-sync
+        private FolderWatchService? _folderWatchService;
 
         // Recently Played Songs
         public ObservableCollection<Song> RecentlyPlayedSongs { get; } = new ObservableCollection<Song>();
@@ -825,11 +834,250 @@ namespace DesktopMusicPlayer.ViewModels
                     
                     // DEBUG: Check if songs are loaded
                     // MessageBox.Show($"Debug: Loaded {Songs.Count} songs from database.\nPlaylists: {Playlists.Count}\nDB Path: {DesktopMusicPlayer.Services.DatabaseService.GetDatabasePath()}", "Startup Debug");
+                    
+                    // Check if a file was passed via command-line (file association)
+                    if (!string.IsNullOrEmpty(App.StartupFilePath))
+                    {
+                        PlayFileFromCommandLine(App.StartupFilePath);
+                    }
+                    
+                    // Initialize folder watch for Music folder auto-sync
+                    InitializeFolderWatch();
                 });
             }
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Plays a file that was passed via command-line (file association).
+        /// Adds the file to the library if it doesn't exist, then plays it.
+        /// </summary>
+        private void PlayFileFromCommandLine(string filePath)
+        {
+            try
+            {
+                // Check if file already exists in library
+                var existingSong = Songs.FirstOrDefault(s => 
+                    s.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase));
+                
+                if (existingSong != null)
+                {
+                    // Already in library - just play it
+                    CurrentSong = existingSong;
+                    Play();
+                    System.Diagnostics.Debug.WriteLine($"Playing existing song: {existingSong.Title}");
+                }
+                else
+                {
+                    // Not in library - add it first using MusicProviderService
+                    var musicProvider = new MusicProviderService();
+                    var newSong = musicProvider.GetSongFromFile(filePath);
+                    if (newSong != null)
+                    {
+                        // Add to database
+                        _songRepository.AddSong(newSong);
+                        
+                        // Add to local collection
+                        Songs.Insert(0, newSong);
+                        
+                        // Add to "My Songs" playlist if it exists
+                        var mySongsPlaylist = Playlists.FirstOrDefault(p => p.Name == "My Songs");
+                        if (mySongsPlaylist != null)
+                        {
+                            mySongsPlaylist.Songs.Insert(0, newSong);
+                            _playlistRepository.AddSongToPlaylist(mySongsPlaylist.Id, newSong.Id);
+                        }
+                        
+                        // Refresh views
+                        SongsView?.Refresh();
+                        UpdateSongCount();
+                        
+                        // Play the new song
+                        CurrentSong = newSong;
+                        Play();
+                        System.Diagnostics.Debug.WriteLine($"Added and playing new song: {newSong.Title}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to play file from command-line: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Initialize folder watch service and sync Music folder at startup.
+        /// </summary>
+        private void InitializeFolderWatch()
+        {
+            try
+            {
+                _folderWatchService = new FolderWatchService();
+                
+                // Subscribe to file events
+                _folderWatchService.FileAdded += OnFolderFileAdded;
+                _folderWatchService.FileDeleted += OnFolderFileDeleted;
+                _folderWatchService.FileRenamed += OnFolderFileRenamed;
+                
+                // Perform startup sync - add any new files from Music folder
+                var existingPaths = Songs.Select(s => s.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var newFilesCount = 0;
+                
+                foreach (var filePath in _folderWatchService.ScanFolder())
+                {
+                    if (!existingPaths.Contains(filePath))
+                    {
+                        AddSongFromFile(filePath, false); // silent add
+                        newFilesCount++;
+                    }
+                }
+                
+                if (newFilesCount > 0)
+                {
+                    SongsView?.Refresh();
+                    UpdateSongCount();
+                    System.Diagnostics.Debug.WriteLine($"Startup sync: Added {newFilesCount} new songs from Music folder");
+                }
+                
+                // Start watching for changes
+                _folderWatchService.StartWatching();
+                System.Diagnostics.Debug.WriteLine($"Folder watch started: {_folderWatchService.WatchPath}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to initialize folder watch: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Add a song from file path to the library.
+        /// </summary>
+        private Song? AddSongFromFile(string filePath, bool playAfterAdd = false)
+        {
+            try
+            {
+                // Check if already exists
+                var existing = Songs.FirstOrDefault(s => 
+                    s.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase));
+                if (existing != null) return existing;
+                
+                // Create song from file
+                var newSong = _musicProvider.GetSongFromFile(filePath);
+                if (newSong == null) return null;
+                
+                // Add to database
+                _songRepository.AddSong(newSong);
+                
+                // Add to local collection
+                Songs.Insert(0, newSong);
+                
+                // Smart Playlist Matching:
+                // Check if any playlist name matches a folder in the file path
+                // e.g. path ".../MyJams/Song.mp3" -> adds to Playlist "MyJams"
+                // e.g. path ".../Music/Rock/Song.mp3" -> adds to Playlist "Music" AND "Rock" if they exist
+                
+                var pathSegments = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var matchingPlaylists = Playlists.Where(p => 
+                    pathSegments.Contains(p.Name, StringComparer.OrdinalIgnoreCase) || 
+                    p.Name.Equals("My Songs", StringComparison.OrdinalIgnoreCase) // Always add to Default "My Songs"
+                ).ToList();
+
+                foreach (var playlist in matchingPlaylists)
+                {
+                    // Avoid duplicates in the same playlist
+                    if (!playlist.Songs.Any(s => s.FilePath == newSong.FilePath))
+                    {
+                        playlist.Songs.Insert(0, newSong);
+                        _playlistRepository.AddSongToPlaylist(playlist.Id, newSong.Id);
+                        System.Diagnostics.Debug.WriteLine($"Auto-added to playlist: {playlist.Name}");
+                    }
+                }
+                
+                if (playAfterAdd)
+                {
+                    CurrentSong = newSong;
+                    Play();
+                }
+                
+                return newSong;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to add song from file: {ex.Message}");
+                return null;
+            }
+        }
+
+        private void OnFolderFileAdded(object? sender, string filePath)
+        {
+            System.Diagnostics.Debug.WriteLine($"Auto-add from folder: {filePath}");
+            var song = AddSongFromFile(filePath);
+            if (song != null)
+            {
+                SongsView?.Refresh();
+                UpdateSongCount();
+            }
+        }
+
+        private void OnFolderFileDeleted(object? sender, string filePath)
+        {
+            System.Diagnostics.Debug.WriteLine($"Auto-remove from folder: {filePath}");
+            var song = Songs.FirstOrDefault(s => 
+                s.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase));
+            
+            if (song != null)
+            {
+                // Stop if currently playing
+                if (CurrentSong == song)
+                {
+                    Pause();
+                    CurrentSong = null;
+                }
+                
+                // Remove from playlists
+                foreach (var playlist in Playlists)
+                {
+                    if (playlist.Songs.Remove(song))
+                    {
+                        _playlistRepository.RemoveSongFromPlaylist(playlist.Id, song.Id);
+                    }
+                }
+                
+                // Remove from library
+                Songs.Remove(song);
+                _songRepository.DeleteSong(song.Id);
+                
+                SongsView?.Refresh();
+                UpdateSongCount();
+            }
+        }
+
+        private void OnFolderFileRenamed(object? sender, (string OldPath, string NewPath) e)
+        {
+            System.Diagnostics.Debug.WriteLine($"Auto-rename: {e.OldPath} -> {e.NewPath}");
+            var song = Songs.FirstOrDefault(s => 
+                s.FilePath.Equals(e.OldPath, StringComparison.OrdinalIgnoreCase));
+            
+            if (song != null)
+            {
+                // Update file path
+                song.FilePath = e.NewPath;
+                _songRepository.UpdateSong(song);
+                
+                // Re-read metadata if title was based on filename
+                var newMetadata = _musicProvider.GetSongFromFile(e.NewPath);
+                if (newMetadata != null && song.Title == Path.GetFileNameWithoutExtension(e.OldPath))
+                {
+                    song.Title = newMetadata.Title;
+                    song.Artist = newMetadata.Artist;
+                    song.Album = newMetadata.Album;
+                    _songRepository.UpdateSong(song);
+                }
+                
+                SongsView?.Refresh();
             }
         }
 
@@ -2004,7 +2252,16 @@ namespace DesktopMusicPlayer.ViewModels
             // Only update from audio if NOT dragging
             if (!IsDragging && _audioService.IsPlaying)
             {
-                CurrentProgress = _audioService.Position.TotalSeconds;
+                try
+                {
+                    _isProgressUpdateFromTimer = true;
+                    CurrentProgress = _audioService.Position.TotalSeconds;
+                }
+                finally
+                {
+                    _isProgressUpdateFromTimer = false;
+                }
+                
                 CurrentTimeFormatted = _audioService.Position.ToString(@"m\:ss");
                 TotalDuration = _audioService.Duration.TotalSeconds;
                 TotalTimeFormatted = _audioService.Duration.ToString(@"m\:ss");
@@ -2232,6 +2489,7 @@ namespace DesktopMusicPlayer.ViewModels
             // Stop and dispose audio
             _progressTimer?.Stop();
             _audioService?.Dispose();
+            _folderWatchService?.Dispose();
 
             GC.SuppressFinalize(this);
         }

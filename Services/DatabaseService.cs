@@ -91,7 +91,17 @@ public class DatabaseService
     {
         var connection = new SQLiteConnection(ConnectionString);
         connection.Open();
-        connection.Execute("PRAGMA foreign_keys = ON;");
+        
+        // PERFORMANCE OPTIMIZATION:
+        // 1. Foreign Keys: Maintain integrity
+        // 2. Journal Mode = WAL (Write-Ahead Logging): Faster writes, better concurrency
+        // 3. Synchronous = NORMAL: Good balance between data safety and speed for desktop apps
+        connection.Execute(@"
+            PRAGMA foreign_keys = ON;
+            PRAGMA journal_mode = WAL;
+            PRAGMA synchronous = NORMAL;
+        ");
+        
         return connection;
     }
 

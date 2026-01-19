@@ -2,6 +2,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="#000000"/>
     <SolidColorBrush x:Key="CardBackgroundBrush" Color="#121212"/>
+    <SolidColorBrush x:Key="PopupBackgroundBrush" Color="#121212"/>
+    
+    <!-- Mini Player Background: Dark Glass -->
+    <SolidColorBrush x:Key="MiniPlayerBackgroundBrush" Color="#CC121212"/>
     <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="SecondaryTextBrush" Color="#B3B3B3"/>
     <SolidColorBrush x:Key="AccentBrush" Color="#87CEEB"/>

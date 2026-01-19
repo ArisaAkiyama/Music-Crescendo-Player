@@ -50,13 +50,42 @@ namespace DesktopMusicPlayer.Services
         
         /// <summary>
         /// Saves cover art image data to the cache.
+        /// Compresses and resizes the image to JPEG 300px to save space.
         /// </summary>
         public void SaveToCache(string filePath, byte[] imageData)
         {
             try
             {
                 var cachePath = GetCachePath(filePath);
-                File.WriteAllBytes(cachePath, imageData);
+                
+                // If already cached, don't overwrite (assume it's good)
+                if (File.Exists(cachePath)) return;
+
+                using (var ms = new MemoryStream(imageData))
+                {
+                    // decoding
+                    var decoder = BitmapDecoder.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                    var frame = decoder.Frames[0];
+
+                    // Resizing logic
+                    double scale = 1.0;
+                    if (frame.PixelWidth > 300)
+                    {
+                        scale = 300.0 / frame.PixelWidth;
+                    }
+
+                    var transformedProps = new TransformedBitmap(frame, new System.Windows.Media.ScaleTransform(scale, scale));
+
+                    // Encoding to JPEG
+                    var encoder = new JpegBitmapEncoder();
+                    encoder.QualityLevel = 75; // Good balance of quality/size
+                    encoder.Frames.Add(BitmapFrame.Create(transformedProps));
+
+                    using (var fs = new FileStream(cachePath, FileMode.Create))
+                    {
+                        encoder.Save(fs);
+                    }
+                }
             }
             catch (Exception ex)
             {

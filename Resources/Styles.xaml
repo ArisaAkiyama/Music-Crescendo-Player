@@ -410,6 +410,8 @@
                         <!-- ===================================== -->
 
                         <Style x:Key="VolumeSliderStyle" TargetType="Slider">
+                            <Setter Property="IsMoveToPointEnabled" Value="True"/>
+                            <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Slider">
@@ -751,7 +753,38 @@
                                                                                 <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                                                     VerticalAlignment="Center"/>
                                                                                 </Border>
-                                                                            </Grid>
+                                                                            <!-- Column Resize Gripper with Vertical Line -->
+                                                                            <Thumb x:Name="PART_RightHeaderGripper"
+                                                                                HorizontalAlignment="Right"
+                                                                                Width="16"
+                                                                                Margin="8,0,0,0"
+                                                                                Cursor="SizeWE"
+                                                                                Background="Transparent">
+                                                                                <Thumb.Template>
+                                                                                    <ControlTemplate TargetType="Thumb">
+                                                                                        <Grid Background="Transparent">
+                                                                                            <!-- Vertical Separator Line (Hidden by default) -->
+                                                                                            <Rectangle x:Name="SeparatorLine"
+                                                                                                Width="1"
+                                                                                                Fill="White"
+                                                                                                Opacity="0"
+                                                                                                HorizontalAlignment="Center"
+                                                                                                VerticalAlignment="Stretch"
+                                                                                                Margin="0,4"/>
+                                                                                        </Grid>
+                                                                                        <ControlTemplate.Triggers>
+                                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                                <Setter TargetName="SeparatorLine" Property="Opacity" Value="0.7"/>
+                                                                                            </Trigger>
+                                                                                            <Trigger Property="IsDragging" Value="True">
+                                                                                                <Setter TargetName="SeparatorLine" Property="Opacity" Value="1"/>
+                                                                                                <Setter TargetName="SeparatorLine" Property="Fill" Value="#87CEEB"/>
+                                                                                            </Trigger>
+                                                                                        </ControlTemplate.Triggers>
+                                                                                    </ControlTemplate>
+                                                                                </Thumb.Template>
+                                                                            </Thumb>
+                                                                        </Grid>
                                                                             <ControlTemplate.Triggers>
                                                                                 <Trigger Property="IsMouseOver" Value="True">
                                                                                     <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>

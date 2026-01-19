@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using Color = System.Windows.Media.Color;
 namespace DesktopMusicPlayer
 {
 

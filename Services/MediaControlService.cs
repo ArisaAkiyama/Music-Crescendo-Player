@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Interop;
+using Application = System.Windows.Application;
 
 namespace DesktopMusicPlayer.Services;
 

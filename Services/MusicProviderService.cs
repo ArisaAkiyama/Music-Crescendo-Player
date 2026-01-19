@@ -31,9 +31,9 @@ namespace DesktopMusicPlayer.Services
 
                 try
                 {
-                    var musicFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
-                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
-                        .ToList();
+                    // OPTIMIZATION: Use EnumerateFiles for faster iteration start and lower memory usage
+                    var musicFiles = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
 
                     int id = 1;
                     foreach (var filePath in musicFiles)
