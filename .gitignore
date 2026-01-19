@@ -6,6 +6,7 @@ dist/
 InnoOutput/
 CustomInstallerOutput/
 UninstallerOutput/
+setup.iss
 publish/
 
 # Visual Studio
