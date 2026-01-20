@@ -390,6 +390,7 @@ Background="{DynamicResource AppBackgroundBrush}">
                             <!-- Playback Menu Removed -->
                             <!-- Help -->
                             <MenuItem Header="Help">
+                                <MenuItem Header="Check for Updates" Command="{Binding CheckForUpdatesCommand}"/>
                                 <MenuItem Header="Keyboard Shortcuts" Command="{Binding KeyboardShortcutsCommand}"/>
                                 <Separator Background="{DynamicResource SeparatorBrush}"/>
                                 <MenuItem Header="About Crescendo" Command="{Binding AboutCommand}"/>
@@ -1086,6 +1087,24 @@ Background="{DynamicResource AppBackgroundBrush}">
                                     </Style>
                                 </DataGrid.RowStyle>
                             </DataGrid>
+
+                            <!-- Empty State for Favorites -->
+                            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Visibility="{Binding IsFavoritesEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        IsHitTestVisible="False">
+                                <TextBlock Text="&#xE00B;" FontFamily="Segoe Fluent Icons" FontSize="48" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                                <TextBlock Text="No Favorite Tracks Available" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Mark songs with a heart to see them here" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <!-- Empty State for Folders -->
+                            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Visibility="{Binding IsFolderEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        IsHitTestVisible="False">
+                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe Fluent Icons" FontSize="48" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                                <TextBlock Text="No Tracks Available" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="This folder is empty" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
                         </Grid>
                     </Grid>
                 </Border>
@@ -1899,13 +1918,13 @@ Background="{DynamicResource AppBackgroundBrush}">
                                 FontWeight="Bold" 
                                 HorizontalAlignment="Center"/>
                                 
-                            <TextBlock Text="Version v1.0.0-beta.2" 
+                            <TextBlock Text="{Binding CurrentVersion, StringFormat='Version {0}'}" 
                                 Foreground="{DynamicResource SecondaryTextBrush}" 
                                 FontSize="14" 
                                 HorizontalAlignment="Center"
                                 Margin="0,4,0,0"/>
 
-                            <TextBlock Text="Build 2026.01.17" 
+                            <TextBlock Text="{Binding AppBuildDate}" 
                                 Foreground="{DynamicResource SecondaryTextBrush}" 
                                 FontSize="12" 
                                 Opacity="0.7"
@@ -1943,6 +1962,172 @@ Background="{DynamicResource AppBackgroundBrush}">
                             HorizontalAlignment="Center"
                             Opacity="0.5"/>
                     </Grid>
+                </Border>
+            </Grid>
+            <!-- Check Updates Popup Overlay -->
+            <Grid Visibility="{Binding IsCheckUpdatesPopupOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                  Background="#99000000"
+                  Grid.RowSpan="3"
+                  Panel.ZIndex="105">
+                <Border Background="{DynamicResource PopupBackgroundBrush}"
+                    CornerRadius="12"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="400">
+
+                    <Grid Margin="32">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <!-- Header -->
+                            <RowDefinition Height="Auto"/> <!-- Content -->
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Header / Close Button -->
+                        <Grid Margin="0,0,0,24">
+                            <TextBlock Text="Check for Updates" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <Button Style="{StaticResource IconButtonStyle}"
+                                Command="{Binding CloseCheckUpdatesPopupCommand}"
+                                HorizontalAlignment="Right" VerticalAlignment="Top">
+                                <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Content Area -->
+                        <Grid Grid.Row="1">
+                            <!-- 1. Checking State -->
+                            <StackPanel Visibility="{Binding IsCheckingForUpdates, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        HorizontalAlignment="Center" Margin="0,24">
+                                <TextBlock Text="&#xE895;" FontFamily="Segoe Fluent Icons" FontSize="48" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                    <TextBlock.RenderTransform>
+                                        <RotateTransform Angle="0"/>
+                                    </TextBlock.RenderTransform>
+                                    <TextBlock.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:1" RepeatBehavior="Forever"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </TextBlock.Triggers>
+                                </TextBlock>
+                                <TextBlock Text="Checking for updates..." Foreground="{DynamicResource SecondaryTextBrush}" FontSize="14" Margin="0,16,0,0" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- 2. Result State (Visible when NOT checking) -->
+                            <Grid Visibility="{Binding IsCheckingForUpdates, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                
+                                <!-- 2A. Update Available -->
+                                <StackPanel Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,24">
+                                        <TextBlock Text="&#xE896;" FontFamily="Segoe Fluent Icons" FontSize="48" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="New Version Available" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="18" FontWeight="SemiBold" Margin="0,16,0,4" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding UpdateVersion, StringFormat='Version {0} is ready to install.'}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="14" HorizontalAlignment="Center"/>
+                                        
+                                        <!-- Release Notes (Simplified) -->
+                                        <!-- <TextBlock Text="{Binding UpdateReleaseNotes}" ... /> omitted for simplicity/space -->
+                                    </StackPanel>
+
+                                    <!-- Progress Bar (Only when updating) -->
+                                    <StackPanel Visibility="{Binding IsUpdating, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,0,0,16">
+                                        <ProgressBar Value="{Binding UpdateDownloadProgress}" Maximum="100" Height="6" Background="#33FFFFFF" Foreground="{DynamicResource AccentBrush}" BorderThickness="0"/>
+                                        <TextBlock Text="{Binding UpdateDownloadProgress, StringFormat='Downloading... {0:0}%'}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="0,8,0,0" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <!-- Buttons -->
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                         <Button Content="Later"
+                                            Command="{Binding CloseCheckUpdatesPopupCommand}"
+                                            IsEnabled="{Binding IsUpdating, Converter={StaticResource InverseBoolConverter}}"
+                                            Background="Transparent"
+                                            Foreground="#B3B3B3"
+                                            FontWeight="Bold"
+                                            FontSize="14"
+                                            BorderThickness="0"
+                                            Margin="0,0,16,0"
+                                            Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" Padding="24,10" CornerRadius="20">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Setter Property="Background" Value="#1AFFFFFF"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        
+                                        <Button Command="{Binding PerformUpdateCommand}"
+                                            IsEnabled="{Binding IsUpdating, Converter={StaticResource InverseBoolConverter}}"
+                                            Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="Bold" FontSize="14"
+                                            BorderThickness="0" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="border" Background="{TemplateBinding Background}" Padding="32,10" CornerRadius="20">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="border" Property="Background" Value="#6DD5ED"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsUpdating}" Value="True">
+                                                             <Setter Property="Opacity" Value="0.6"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Content" Value="Update Now"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsUpdating}" Value="True">
+                                                            <Setter Property="Content" Value="Wait..."/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- 2B. Up To Date -->
+                                <StackPanel Visibility="{Binding IsUpdateAvailable, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                            HorizontalAlignment="Center" Margin="0,24">
+                                    <TextBlock Text="&#xE930;" FontFamily="Segoe Fluent Icons" FontSize="48" Foreground="#87CEEB" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="You're up to date!" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="18" FontWeight="SemiBold" Margin="0,16,0,4" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding CurrentVersion, StringFormat='Version {0} is installed.', TargetNullValue='Crescendo is up to date.'}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="14" HorizontalAlignment="Center"/>
+                                    
+                                    <Button Content="OK"
+                                            Command="{Binding CloseCheckUpdatesPopupCommand}"
+                                            Background="{DynamicResource ControlHoverBrush}"
+                                            Foreground="{DynamicResource PrimaryTextBrush}"
+                                            FontWeight="Bold"
+                                            FontSize="14"
+                                            BorderThickness="0"
+                                            Margin="0,24,0,0"
+                                            Cursor="Hand"
+                                            HorizontalAlignment="Center">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" Padding="48,10" CornerRadius="20">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#4DFFFFFF"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+
                 </Border>
             </Grid>
             <Grid Visibility="{Binding IsQueuePopupOpen, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -2117,6 +2302,181 @@ Background="{DynamicResource AppBackgroundBrush}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" Padding="32,12" CornerRadius="20">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#4DFFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Settings Popup -->
+            <Grid Grid.RowSpan="3" Panel.ZIndex="100"
+                  Visibility="{Binding IsSettingsPopupOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                <!-- Dark Overlay -->
+                <Border Background="#CC000000" MouseDown="SettingsOverlay_MouseDown"/>
+                
+                <!-- Settings Panel -->
+                <Border Background="{DynamicResource CardBackgroundBrush}"
+                        CornerRadius="16"
+                        Width="500" MaxHeight="600"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Padding="24">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/> <!-- Update Section -->
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Header -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                            <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons" FontSize="24" 
+                                       Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        </StackPanel>
+                        
+                        <!-- Update Section -->
+                        <Border Grid.Row="1" Margin="0,0,0,24" CornerRadius="8" Background="#1A4ECDC4" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
+                                Padding="12"
+                                Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="&#xE896;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="New Update Available!" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="14"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding UpdateVersion, StringFormat='Version {0} is available for download.'}" 
+                                               Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="24,0,0,0"/>
+                                    
+                                    <!-- Progress Bar -->
+                                    <ProgressBar Value="{Binding UpdateDownloadProgress}" Maximum="100" Height="4" Margin="0,8,0,0"
+                                                 Foreground="{DynamicResource AccentBrush}" Background="#33FFFFFF" BorderThickness="0"
+                                                 Visibility="{Binding IsUpdating, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                </StackPanel>
+                                
+                                <Button Grid.Column="1" Command="{Binding PerformUpdateCommand}" Margin="16,0,0,0"
+                                        IsEnabled="{Binding IsUpdating, Converter={StaticResource InverseBoolConverter}}"
+                                        Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="Bold"
+                                        Padding="16,8" Cursor="Hand" VerticalAlignment="Center">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsUpdating}" Value="True">
+                                                    <Setter Property="Content" Value="Downloading..."/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsUpdating}" Value="False">
+                                                    <Setter Property="Content" Value="Update Now"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        
+                        <!-- Watched Folders Section -->
+                        <StackPanel Grid.Row="2" Margin="0,0,0,16">
+                            <TextBlock Text="Watched Folders" FontSize="16" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,8"/>
+                            <TextBlock Text="Folders below are monitored for new music files" FontSize="12" 
+                                       Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,12"/>
+                        </StackPanel>
+                        
+                        <!-- Folders List -->
+                        <Border Grid.Row="3" Background="{DynamicResource ControlHoverBrush}" 
+                                CornerRadius="8" Padding="8" MaxHeight="300">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding WatchedFolders}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                                    CornerRadius="6" Margin="0,0,0,4" Padding="12,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <TextBlock Grid.Column="0" Text="&#xE8B7;" FontFamily="Segoe Fluent Icons" 
+                                                               FontSize="16" Foreground="{DynamicResource AccentBrush}"
+                                                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding}" FontSize="13" 
+                                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding}"/>
+                                                    <Button Grid.Column="2" 
+                                                            Command="{Binding DataContext.RemoveWatchedFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                            ToolTip="Remove folder">
+                                                        <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons" 
+                                                                   FontSize="14" Foreground="#E91E63"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                        
+                        <!-- Buttons -->
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                            <Button Command="{Binding AddWatchedFolderCommand}"
+                                    Background="{DynamicResource AccentBrush}"
+                                    Foreground="White" FontWeight="Bold" FontSize="14"
+                                    BorderThickness="0" Cursor="Hand" Margin="0,0,8,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" Padding="16,10" CornerRadius="8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <ContentPresenter VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="0.9"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                                <TextBlock Text="Add Folder"/>
+                            </Button>
+                            <Button Content="Close"
+                                    Command="{Binding SettingsCommand}"
+                                    Background="#33FFFFFF"
+                                    Foreground="White" FontWeight="Bold" FontSize="14"
+                                    BorderThickness="0" Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" Padding="24,10" CornerRadius="8">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <ControlTemplate.Triggers>

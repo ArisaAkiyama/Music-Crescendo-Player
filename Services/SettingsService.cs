@@ -123,5 +123,49 @@ namespace DesktopMusicPlayer.Services
             _settings["Volume"] = volume.ToString("F2");
             SaveSettings();
         }
+
+        /// <summary>
+        /// Get list of folders to watch for auto-sync.
+        /// </summary>
+        public static List<string> GetWatchedFolders()
+        {
+            if (_settings.TryGetValue("WatchedFolders", out var val) && !string.IsNullOrWhiteSpace(val))
+            {
+                return new List<string>(val.Split('|', StringSplitOptions.RemoveEmptyEntries));
+            }
+            return new List<string>();
+        }
+
+        /// <summary>
+        /// Save list of folders to watch for auto-sync.
+        /// </summary>
+        public static void SaveWatchedFolders(IEnumerable<string> folders)
+        {
+            _settings["WatchedFolders"] = string.Join("|", folders);
+            SaveSettings();
+        }
+
+        /// <summary>
+        /// Add a folder to watch list.
+        /// </summary>
+        public static void AddWatchedFolder(string folderPath)
+        {
+            var folders = GetWatchedFolders();
+            if (!folders.Contains(folderPath, StringComparer.OrdinalIgnoreCase))
+            {
+                folders.Add(folderPath);
+                SaveWatchedFolders(folders);
+            }
+        }
+
+        /// <summary>
+        /// Remove a folder from watch list.
+        /// </summary>
+        public static void RemoveWatchedFolder(string folderPath)
+        {
+            var folders = GetWatchedFolders();
+            folders.RemoveAll(f => f.Equals(folderPath, StringComparison.OrdinalIgnoreCase));
+            SaveWatchedFolders(folders);
+        }
     }
 }

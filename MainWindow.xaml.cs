@@ -619,4 +619,15 @@ public partial class MainWindow : Window
         _systemTrayService?.Dispose();
         Application.Current.Shutdown();
     }
+    
+    /// <summary>
+    /// Close settings popup when clicking on dark overlay.
+    /// </summary>
+    private void SettingsOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.IsSettingsPopupOpen = false;
+        }
+    }
 }

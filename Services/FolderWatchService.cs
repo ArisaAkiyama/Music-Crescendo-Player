@@ -10,12 +10,12 @@ using System.Windows;
 namespace DesktopMusicPlayer.Services;
 
 /// <summary>
-/// Service that monitors a folder for new/deleted music files and syncs with library.
+/// Service that monitors multiple folders for new/deleted music files and syncs with library.
 /// </summary>
 public class FolderWatchService : IDisposable
 {
-    private FileSystemWatcher? _watcher;
-    private readonly string _watchPath;
+    private readonly Dictionary<string, FileSystemWatcher> _watchers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _watchPaths = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _supportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp3", ".m4a", ".wav", ".flac", ".wma", ".aac", ".ogg"
@@ -30,111 +30,194 @@ public class FolderWatchService : IDisposable
     private readonly Dictionary<string, System.Threading.Timer> _debounceTimers = new();
     private readonly object _lockObj = new();
     
-    public string WatchPath => _watchPath;
-    public bool IsWatching => _watcher?.EnableRaisingEvents ?? false;
+    public IReadOnlyCollection<string> WatchPaths => _watchPaths;
+    public bool IsWatching => _watchers.Count > 0 && _watchers.Values.Any(w => w.EnableRaisingEvents);
 
-    public FolderWatchService(string? folderPath = null)
+    public FolderWatchService()
     {
-        if (folderPath != null)
+        // Load saved watched folders
+        var savedFolders = SettingsService.GetWatchedFolders();
+        foreach (var folder in savedFolders)
         {
-            _watchPath = folderPath;
-        }
-        else
-        {
-            // Intelligent folder detection for "experiment here" support
-            // 1. Try "Music" folder in application directory
-            var appDir = AppDomain.CurrentDomain.BaseDirectory;
-            var localMusic = Path.Combine(appDir, "Music");
-            
-            // 2. Try "Music" folder in project root (dev environment)
-            // Walk up from bin\Debug\net8.0-windows... -> Project Root
-            var projectMusic = Path.GetFullPath(Path.Combine(appDir, @"..\..\..\Music"));
-
-            if (Directory.Exists(localMusic))
+            if (Directory.Exists(folder))
             {
-                _watchPath = localMusic;
-                Debug.WriteLine($"FolderWatchService: Using local Music folder: {_watchPath}");
-            }
-            else if (Directory.Exists(projectMusic))
-            {
-                _watchPath = projectMusic;
-                Debug.WriteLine($"FolderWatchService: Using project Music folder: {_watchPath}");
-            }
-            else
-            {
-                _watchPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
-                Debug.WriteLine($"FolderWatchService: Using System Music folder: {_watchPath}");
+                _watchPaths.Add(folder);
             }
         }
         
-        if (!Directory.Exists(_watchPath))
+        // Always include default Music folder if no custom folders
+        if (_watchPaths.Count == 0)
         {
-            Debug.WriteLine($"FolderWatchService: Path does not exist: {_watchPath}");
+            var defaultMusic = GetDefaultMusicFolder();
+            if (!string.IsNullOrEmpty(defaultMusic) && Directory.Exists(defaultMusic))
+            {
+                _watchPaths.Add(defaultMusic);
+            }
         }
     }
 
     /// <summary>
-    /// Start watching the folder for changes.
+    /// Get the default Music folder based on environment.
+    /// </summary>
+    private string GetDefaultMusicFolder()
+    {
+        // 1. Try "Music" folder in application directory
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+        var localMusic = Path.Combine(appDir, "Music");
+        
+        // 2. Try "Music" folder in project root (dev environment)
+        var projectMusic = Path.GetFullPath(Path.Combine(appDir, @"..\..\..\Music"));
+
+        if (Directory.Exists(localMusic))
+        {
+            Debug.WriteLine($"FolderWatchService: Using local Music folder: {localMusic}");
+            return localMusic;
+        }
+        else if (Directory.Exists(projectMusic))
+        {
+            Debug.WriteLine($"FolderWatchService: Using project Music folder: {projectMusic}");
+            return projectMusic;
+        }
+        else
+        {
+            var systemMusic = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+            Debug.WriteLine($"FolderWatchService: Using System Music folder: {systemMusic}");
+            return systemMusic;
+        }
+    }
+
+    /// <summary>
+    /// Add a folder to watch list and start watching it.
+    /// </summary>
+    public void AddFolder(string folderPath)
+    {
+        if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath))
+        {
+            Debug.WriteLine($"FolderWatchService: Cannot add non-existent folder: {folderPath}");
+            return;
+        }
+
+        if (_watchPaths.Contains(folderPath))
+        {
+            Debug.WriteLine($"FolderWatchService: Folder already watched: {folderPath}");
+            return;
+        }
+
+        _watchPaths.Add(folderPath);
+        SettingsService.AddWatchedFolder(folderPath);
+        
+        // Start watching if service is active
+        if (_watchers.Count > 0)
+        {
+            StartWatchingFolder(folderPath);
+        }
+        
+        Debug.WriteLine($"FolderWatchService: Added folder to watch: {folderPath}");
+    }
+
+    /// <summary>
+    /// Remove a folder from watch list and stop watching it.
+    /// </summary>
+    public void RemoveFolder(string folderPath)
+    {
+        if (_watchPaths.Remove(folderPath))
+        {
+            SettingsService.RemoveWatchedFolder(folderPath);
+            
+            if (_watchers.TryGetValue(folderPath, out var watcher))
+            {
+                watcher.EnableRaisingEvents = false;
+                watcher.Dispose();
+                _watchers.Remove(folderPath);
+            }
+            
+            Debug.WriteLine($"FolderWatchService: Removed folder from watch: {folderPath}");
+        }
+    }
+
+    /// <summary>
+    /// Start watching all folders for changes.
     /// </summary>
     public void StartWatching()
     {
-        if (_watcher != null) return;
-        
-        if (!Directory.Exists(_watchPath))
+        foreach (var path in _watchPaths)
         {
-            Debug.WriteLine($"Cannot watch non-existent folder: {_watchPath}");
+            StartWatchingFolder(path);
+        }
+    }
+
+    private void StartWatchingFolder(string folderPath)
+    {
+        if (_watchers.ContainsKey(folderPath)) return;
+        
+        if (!Directory.Exists(folderPath))
+        {
+            Debug.WriteLine($"Cannot watch non-existent folder: {folderPath}");
             return;
         }
 
         try
         {
-            _watcher = new FileSystemWatcher(_watchPath)
+            var watcher = new FileSystemWatcher(folderPath)
             {
                 NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.DirectoryName,
                 IncludeSubdirectories = true,
                 EnableRaisingEvents = true
             };
 
-            // Set filters for music files
-            _watcher.Created += OnFileCreated;
-            _watcher.Deleted += OnFileDeleted;
-            _watcher.Renamed += OnFileRenamed;
+            watcher.Created += OnFileCreated;
+            watcher.Deleted += OnFileDeleted;
+            watcher.Renamed += OnFileRenamed;
             
-            Debug.WriteLine($"FolderWatchService: Started watching {_watchPath}");
+            _watchers[folderPath] = watcher;
+            Debug.WriteLine($"FolderWatchService: Started watching {folderPath}");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"FolderWatchService: Failed to start watching: {ex.Message}");
+            Debug.WriteLine($"FolderWatchService: Failed to start watching {folderPath}: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Stop watching the folder.
+    /// Stop watching all folders.
     /// </summary>
     public void StopWatching()
     {
-        if (_watcher != null)
+        foreach (var watcher in _watchers.Values)
         {
-            _watcher.EnableRaisingEvents = false;
-            _watcher.Dispose();
-            _watcher = null;
-            Debug.WriteLine("FolderWatchService: Stopped watching");
+            watcher.EnableRaisingEvents = false;
+            watcher.Dispose();
         }
+        _watchers.Clear();
+        Debug.WriteLine("FolderWatchService: Stopped watching all folders");
     }
 
     /// <summary>
-    /// Scan the folder and return all music files (for startup sync).
+    /// Scan all watched folders and return all music files (for startup sync).
     /// </summary>
     public IEnumerable<string> ScanFolder()
     {
-        if (!Directory.Exists(_watchPath))
+        foreach (var path in _watchPaths)
         {
-            yield break;
-        }
+            if (!Directory.Exists(path)) continue;
 
-        foreach (var ext in _supportedExtensions)
-        {
-            foreach (var file in Directory.EnumerateFiles(_watchPath, $"*{ext}", SearchOption.AllDirectories))
+
+
+            IEnumerable<string> files;
+            try
+            {
+                // Optimization: Scan once for all files, then filter by extension in memory
+                // This builds the iterator lazily and avoids walking the directory tree multiple times
+                files = Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f)));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error scanning {path}: {ex.Message}");
+                continue;
+            }
+
+            foreach (var file in files)
             {
                 yield return file;
             }
@@ -145,10 +228,8 @@ public class FolderWatchService : IDisposable
     {
         if (!IsMusicFile(e.FullPath)) return;
         
-        // Debounce to avoid multiple events for same file (copy operations trigger multiple events)
         DebouncedAction(e.FullPath, () =>
         {
-            // Verify file still exists and is accessible
             if (File.Exists(e.FullPath))
             {
                 Debug.WriteLine($"FolderWatchService: File added - {e.FullPath}");
@@ -169,24 +250,19 @@ public class FolderWatchService : IDisposable
 
     private void OnFileRenamed(object sender, RenamedEventArgs e)
     {
-        // Handle renamed TO a music file
         if (IsMusicFile(e.FullPath) && !IsMusicFile(e.OldFullPath))
         {
-            // File was renamed from non-music to music (e.g., .mp3.tmp to .mp3)
             OnFileCreated(sender, e);
             return;
         }
         
-        // Handle renamed FROM a music file
         if (!IsMusicFile(e.FullPath) && IsMusicFile(e.OldFullPath))
         {
-            // File was renamed from music to non-music
             OnFileDeleted(sender, new FileSystemEventArgs(WatcherChangeTypes.Deleted, 
                 Path.GetDirectoryName(e.OldFullPath) ?? "", Path.GetFileName(e.OldFullPath)));
             return;
         }
         
-        // Both are music files - it's a rename
         if (IsMusicFile(e.FullPath) && IsMusicFile(e.OldFullPath))
         {
             Debug.WriteLine($"FolderWatchService: File renamed - {e.OldFullPath} -> {e.FullPath}");
